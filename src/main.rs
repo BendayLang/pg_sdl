@@ -1,21 +1,21 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
+use fontdue;
+use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
+use fontdue_sdl2::FontTexture;
 use sdl2::{
-    event::Event,
-    keyboard::Keycode,
     pixels::Color,
     rect::Rect,
-    render::{Canvas, TextureCreator, TextureQuery},
-    surface::SurfaceRef,
-    ttf::Font,
+    render::{Canvas, TextureCreator},
     video::{Window, WindowContext},
 };
-use std::path::Path;
 use std::time::Duration;
 
+mod app;
 mod canvas;
 mod input;
-use canvas::WindowCanvas;
+use app::App;
+pub use input::Input;
 
 macro_rules! rect(
     ($x:expr, $y:expr, $w:expr, $h:expr) => (
@@ -23,68 +23,42 @@ macro_rules! rect(
     )
 );
 
-fn draw_text(
-    texture_creator: &TextureCreator<WindowContext>,
-    font: &mut Font,
-    font_style: sdl2::ttf::FontStyle,
-    canvas: &mut WindowCanvas,
-) {
-    font.set_style(font_style);
-    let surface = font
-        .render("Hello Rust!")
-        .blended(Color::RGBA(255, 0, 0, 255))
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let TextureQuery { width, height, .. } = texture.query();
-    canvas
-        .0
-        .copy(&texture, None, Some(rect!(0, 0, width, height)))
+fn draw_text(app: &mut App, font_index: usize, text: &str, x: f32, y: f32) {
+    let mut font_texture = FontTexture::new(&app.texture_creator).unwrap();
+    let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+    layout.reset(&LayoutSettings {
+        x,
+        y,
+        ..Default::default()
+    });
+    layout.append(
+        &app.fonts,
+        &TextStyle::with_user_data(text, 100.0, font_index, Color::RGB(0xFF, 0xFF, 0)),
+    );
+    font_texture
+        .draw_text(&mut app.canvas, &app.fonts, layout.glyphs())
         .unwrap();
 }
 
-pub fn main() {
-    let sdl_context = sdl2::init().unwrap();
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
-    let video_subsystem = sdl_context
-        .video()
-        .expect("SDL video subsystem could not be initialized");
-    let window = video_subsystem
-        .window("Oxy", 800, 600)
-        .position_centered()
-        .build()
-        .expect("Window could not be created");
-    let mut canvas = WindowCanvas(window.into_canvas().build().unwrap());
+fn main() {
+    let mut app: App = App::init("benday", 800, 600);
 
-    let mut input = input::Input::new(sdl_context);
+    let mut r = 0;
+    let mut text = String::new();
 
-    let texture_creator = canvas.0.texture_creator();
-    let mut font = ttf_context
-        .load_font(Path::new(r#"/usr/share/fonts/TTF/VeraBd.ttf"#), 120)
-        .unwrap();
+    app.main_loop(&mut |app, _delta| {
+        canvas::fill_background(&mut app.canvas, Color::RGB(r, 64, 255 - r));
+        canvas::draw_rect(&mut app.canvas, rect!(10, 10, 100, 100), Color::GREEN);
 
-    let mut i = 0;
-    'running: loop {
-        input.get_events();
-        if input.should_quit || input.keys_state.esc == input::KeyState::Pressed {
-            break 'running;
+        if let Some(last_char) = app.input.last_char {
+            text.push(last_char);
+        }
+        if app.input.keys_state.backspace == input::KeyState::Pressed {
+            text.pop();
         }
 
-        i = (i + 1) % 255;
-        canvas.fill_background(Color::RGB(i, 64, 255 - i));
-        canvas.draw_rect(rect!(10, 10, 100, 100), Color::GREEN);
-        draw_text(
-            &texture_creator,
-            &mut font,
-            sdl2::ttf::FontStyle::BOLD,
-            &mut canvas,
-        );
-        canvas.0.present();
-        std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-    }
+        draw_text(app, 1, &text, 100.0, 100.0);
+
+        r = (r + 1) % 255;
+    });
 }

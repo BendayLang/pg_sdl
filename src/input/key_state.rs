@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum KeyState {
     Up,
     Pressed,
@@ -6,6 +6,7 @@ pub enum KeyState {
     Released,
 }
 
+#[derive(Debug)]
 pub struct KeysState {
     pub a: KeyState,
     pub b: KeyState,
@@ -54,6 +55,7 @@ pub struct KeysState {
     pub ctrl: KeyState,
     pub alt: KeyState,
     pub esc: KeyState,
+    pub backspace: KeyState,
 }
 
 impl KeysState {
@@ -106,18 +108,17 @@ impl KeysState {
             ctrl: KeyState::Up,
             alt: KeyState::Up,
             esc: KeyState::Up,
+            backspace: KeyState::Up,
         }
     }
 
     fn get_key_state(key: &KeyState, is_down: bool) -> KeyState {
-        if is_down && *key != KeyState::Down {
-            KeyState::Pressed
-        } else if is_down {
-            KeyState::Down
-        } else if *key != KeyState::Up {
+        if !is_down {
             KeyState::Released
+        } else if *key != KeyState::Down {
+            KeyState::Pressed
         } else {
-            KeyState::Up
+            KeyState::Down
         }
     }
 
@@ -125,34 +126,112 @@ impl KeysState {
         use sdl2::keyboard::Keycode;
 
         match keycode {
+            Keycode::Backspace => self.backspace = Self::get_key_state(&self.backspace, is_down),
             Keycode::A => self.a = Self::get_key_state(&self.a, is_down),
-			Keycode::B => self.b = Self::get_key_state(&self.b, is_down),
-			Keycode::C => self.c = Self::get_key_state(&self.c, is_down),
-			Keycode::D => self.d = Self::get_key_state(&self.d, is_down),
-			Keycode::E => self.e = Self::get_key_state(&self.e, is_down),
-			Keycode::F => self.f = Self::get_key_state(&self.f, is_down),
-			Keycode::G => self.g = Self::get_key_state(&self.g, is_down),
-			Keycode::H => self.h = Self::get_key_state(&self.h, is_down),
-			Keycode::I => self.i = Self::get_key_state(&self.i, is_down),
-			Keycode::J => self.j = Self::get_key_state(&self.j, is_down),
-			Keycode::K => self.k = Self::get_key_state(&self.k, is_down),
-			Keycode::L => self.l = Self::get_key_state(&self.l, is_down),
-			Keycode::M => self.m = Self::get_key_state(&self.m, is_down),
-			Keycode::N => self.n = Self::get_key_state(&self.n, is_down),
-			Keycode::O => self.o = Self::get_key_state(&self.o, is_down),
-			Keycode::P => self.p = Self::get_key_state(&self.p, is_down),
-			Keycode::Q => self.q = Self::get_key_state(&self.q, is_down),
-			Keycode::R => self.r = Self::get_key_state(&self.r, is_down),
-			Keycode::S => self.s = Self::get_key_state(&self.s, is_down),
-			Keycode::T => self.t = Self::get_key_state(&self.t, is_down),
-			Keycode::U => self.u = Self::get_key_state(&self.u, is_down),
-			Keycode::V => self.v = Self::get_key_state(&self.v, is_down),
-			Keycode::W => self.w = Self::get_key_state(&self.w, is_down),
-			Keycode::X => self.x = Self::get_key_state(&self.x, is_down),
-			Keycode::Escape => self.esc = Self::get_key_state(&self.esc, is_down),
+            Keycode::B => self.b = Self::get_key_state(&self.b, is_down),
+            Keycode::C => self.c = Self::get_key_state(&self.c, is_down),
+            Keycode::D => self.d = Self::get_key_state(&self.d, is_down),
+            Keycode::E => self.e = Self::get_key_state(&self.e, is_down),
+            Keycode::F => self.f = Self::get_key_state(&self.f, is_down),
+            Keycode::G => self.g = Self::get_key_state(&self.g, is_down),
+            Keycode::H => self.h = Self::get_key_state(&self.h, is_down),
+            Keycode::I => self.i = Self::get_key_state(&self.i, is_down),
+            Keycode::J => self.j = Self::get_key_state(&self.j, is_down),
+            Keycode::K => self.k = Self::get_key_state(&self.k, is_down),
+            Keycode::L => self.l = Self::get_key_state(&self.l, is_down),
+            Keycode::M => self.m = Self::get_key_state(&self.m, is_down),
+            Keycode::N => self.n = Self::get_key_state(&self.n, is_down),
+            Keycode::O => self.o = Self::get_key_state(&self.o, is_down),
+            Keycode::P => self.p = Self::get_key_state(&self.p, is_down),
+            Keycode::Q => self.q = Self::get_key_state(&self.q, is_down),
+            Keycode::R => self.r = Self::get_key_state(&self.r, is_down),
+            Keycode::S => self.s = Self::get_key_state(&self.s, is_down),
+            Keycode::T => self.t = Self::get_key_state(&self.t, is_down),
+            Keycode::U => self.u = Self::get_key_state(&self.u, is_down),
+            Keycode::V => self.v = Self::get_key_state(&self.v, is_down),
+            Keycode::W => self.w = Self::get_key_state(&self.w, is_down),
+            Keycode::X => self.x = Self::get_key_state(&self.x, is_down),
+            Keycode::Escape => self.esc = Self::get_key_state(&self.esc, is_down),
+            Keycode::Up => self.up = Self::get_key_state(&self.up, is_down),
+            Keycode::Down => self.down = Self::get_key_state(&self.down, is_down),
+            Keycode::Left => self.left = Self::get_key_state(&self.left, is_down),
+            Keycode::Right => self.right = Self::get_key_state(&self.right, is_down),
+            Keycode::Num0 => self._0 = Self::get_key_state(&self._0, is_down),
+            Keycode::Num1 => self._1 = Self::get_key_state(&self._1, is_down),
+            Keycode::Space => self.space = Self::get_key_state(&self.space, is_down),
             _ => {
-				println!("Keycode: {:?}", keycode);
-			}
+                println!("Keycode: {:?}", keycode);
+            }
         }
+    }
+
+    pub fn as_array(&self) -> [&KeyState; 30] {
+        [
+            &self.a,
+            &self.b,
+            &self.c,
+            &self.d,
+            &self.e,
+            &self.f,
+            &self.g,
+            &self.h,
+            &self.i,
+            &self.j,
+            &self.k,
+            &self.l,
+            &self.m,
+            &self.n,
+            &self.o,
+            &self.p,
+            &self.q,
+            &self.r,
+            &self.s,
+            &self.t,
+            &self.u,
+            &self.v,
+            &self.w,
+            &self.x,
+            &self.up,
+            &self.down,
+            &self.left,
+            &self.right,
+            &self.space,
+            &self.enter,
+        ]
+    }
+
+    pub fn as_mut_array(&mut self) -> [&mut KeyState; 30] {
+        [
+            &mut self.a,
+            &mut self.b,
+            &mut self.c,
+            &mut self.d,
+            &mut self.e,
+            &mut self.f,
+            &mut self.g,
+            &mut self.h,
+            &mut self.i,
+            &mut self.j,
+            &mut self.k,
+            &mut self.l,
+            &mut self.m,
+            &mut self.n,
+            &mut self.o,
+            &mut self.p,
+            &mut self.q,
+            &mut self.r,
+            &mut self.s,
+            &mut self.t,
+            &mut self.u,
+            &mut self.v,
+            &mut self.w,
+            &mut self.x,
+            &mut self.up,
+            &mut self.down,
+            &mut self.left,
+            &mut self.right,
+            &mut self.space,
+            &mut self.enter,
+        ]
     }
 }
