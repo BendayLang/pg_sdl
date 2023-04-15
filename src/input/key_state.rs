@@ -113,12 +113,10 @@ impl KeysState {
     }
 
     fn get_key_state(key: &KeyState, is_down: bool) -> KeyState {
-        if !is_down {
-            KeyState::Released
-        } else if *key != KeyState::Down {
+        if is_down {
             KeyState::Pressed
         } else {
-            KeyState::Down
+            KeyState::Released
         }
     }
 
@@ -165,42 +163,7 @@ impl KeysState {
         }
     }
 
-    pub fn as_array(&self) -> [&KeyState; 30] {
-        [
-            &self.a,
-            &self.b,
-            &self.c,
-            &self.d,
-            &self.e,
-            &self.f,
-            &self.g,
-            &self.h,
-            &self.i,
-            &self.j,
-            &self.k,
-            &self.l,
-            &self.m,
-            &self.n,
-            &self.o,
-            &self.p,
-            &self.q,
-            &self.r,
-            &self.s,
-            &self.t,
-            &self.u,
-            &self.v,
-            &self.w,
-            &self.x,
-            &self.up,
-            &self.down,
-            &self.left,
-            &self.right,
-            &self.space,
-            &self.enter,
-        ]
-    }
-
-    pub fn as_mut_array(&mut self) -> [&mut KeyState; 30] {
+    pub fn as_mut_array(&mut self) -> [&mut KeyState; 48] {
         [
             &mut self.a,
             &mut self.b,
@@ -232,6 +195,24 @@ impl KeysState {
             &mut self.right,
             &mut self.space,
             &mut self.enter,
+            &mut self.mouse_left,
+            &mut self.mouse_right,
+            &mut self.mouse_middle,
+            &mut self.shift,
+            &mut self.ctrl,
+            &mut self.alt,
+            &mut self.esc,
+            &mut self.backspace,
+            &mut self._0,
+            &mut self._1,
+            &mut self._2,
+            &mut self._3,
+            &mut self._4,
+            &mut self._5,
+            &mut self._6,
+            &mut self._7,
+            &mut self._8,
+            &mut self._9,
         ]
     }
 }

@@ -1,6 +1,7 @@
 use sdl2::{render::Canvas, video::Window};
 
 pub struct App {
+    pub new_background_color: Option<sdl2::pixels::Color>,
     pub input: crate::input::Input,
     pub video_subsystem: sdl2::VideoSubsystem,
     pub canvas: Canvas<Window>,
@@ -37,6 +38,7 @@ impl App {
             canvas,
             ttf_context,
             fonts: fonts_init(),
+            new_background_color: None,
         }
     }
 
@@ -50,6 +52,10 @@ impl App {
                 || self.input.keys_state.esc == crate::input::KeyState::Pressed
             {
                 break 'running;
+            }
+            if let Some(color) = self.new_background_color {
+                crate::canvas::fill_background(&mut self.canvas, color);
+                self.new_background_color = None;
             }
 
             update(self, 1.0 / 60.0);
