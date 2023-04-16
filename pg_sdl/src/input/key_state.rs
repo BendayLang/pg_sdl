@@ -1,9 +1,29 @@
+use sdl2::keyboard::Keycode;
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum KeyState {
     Up,
     Pressed,
     Down,
     Released,
+}
+
+impl KeyState {
+    pub fn new() -> Self { Self::Up }
+    pub fn update(&mut self) {
+        match self {
+            Self::Pressed => { *self = Self::Down; }
+            Self::Released => { *self = Self::Up; }
+            _ => {}
+        };
+    }
+    pub fn press(&mut self) { *self = Self::Pressed }
+    pub fn release(&mut self) { *self = Self::Released }
+
+    pub fn is_up(&self) -> bool { *self == Self::Up }
+    pub fn is_pressed(&self) -> bool { *self == Self::Pressed }
+    pub fn is_down(&self) -> bool { *self == Self::Down }
+    pub fn is_released(&self) -> bool { *self == Self::Released }
 }
 
 #[derive(Debug)]
@@ -54,110 +74,128 @@ pub struct KeysState {
     pub shift: KeyState,
     pub ctrl: KeyState,
     pub alt: KeyState,
-    pub esc: KeyState,
+    pub escape: KeyState,
     pub backspace: KeyState,
 }
 
 impl KeysState {
     pub fn new() -> Self {
         KeysState {
-            a: KeyState::Up,
-            b: KeyState::Up,
-            c: KeyState::Up,
-            d: KeyState::Up,
-            e: KeyState::Up,
-            f: KeyState::Up,
-            g: KeyState::Up,
-            h: KeyState::Up,
-            i: KeyState::Up,
-            j: KeyState::Up,
-            k: KeyState::Up,
-            l: KeyState::Up,
-            m: KeyState::Up,
-            n: KeyState::Up,
-            o: KeyState::Up,
-            p: KeyState::Up,
-            q: KeyState::Up,
-            r: KeyState::Up,
-            s: KeyState::Up,
-            t: KeyState::Up,
-            u: KeyState::Up,
-            v: KeyState::Up,
-            w: KeyState::Up,
-            x: KeyState::Up,
-            up: KeyState::Up,
-            down: KeyState::Up,
-            left: KeyState::Up,
-            right: KeyState::Up,
-            _0: KeyState::Up,
-            _1: KeyState::Up,
-            _2: KeyState::Up,
-            _3: KeyState::Up,
-            _4: KeyState::Up,
-            _5: KeyState::Up,
-            _6: KeyState::Up,
-            _7: KeyState::Up,
-            _8: KeyState::Up,
-            _9: KeyState::Up,
-            space: KeyState::Up,
-            enter: KeyState::Up,
-            mouse_left: KeyState::Up,
-            mouse_right: KeyState::Up,
-            mouse_middle: KeyState::Up,
-            shift: KeyState::Up,
-            ctrl: KeyState::Up,
-            alt: KeyState::Up,
-            esc: KeyState::Up,
-            backspace: KeyState::Up,
+            a: KeyState::new(),
+            b: KeyState::new(),
+            c: KeyState::new(),
+            d: KeyState::new(),
+            e: KeyState::new(),
+            f: KeyState::new(),
+            g: KeyState::new(),
+            h: KeyState::new(),
+            i: KeyState::new(),
+            j: KeyState::new(),
+            k: KeyState::new(),
+            l: KeyState::new(),
+            m: KeyState::new(),
+            n: KeyState::new(),
+            o: KeyState::new(),
+            p: KeyState::new(),
+            q: KeyState::new(),
+            r: KeyState::new(),
+            s: KeyState::new(),
+            t: KeyState::new(),
+            u: KeyState::new(),
+            v: KeyState::new(),
+            w: KeyState::new(),
+            x: KeyState::new(),
+            up: KeyState::new(),
+            down: KeyState::new(),
+            left: KeyState::new(),
+            right: KeyState::new(),
+            _0: KeyState::new(),
+            _1: KeyState::new(),
+            _2: KeyState::new(),
+            _3: KeyState::new(),
+            _4: KeyState::new(),
+            _5: KeyState::new(),
+            _6: KeyState::new(),
+            _7: KeyState::new(),
+            _8: KeyState::new(),
+            _9: KeyState::new(),
+            space: KeyState::new(),
+            enter: KeyState::new(),
+            mouse_left: KeyState::new(),
+            mouse_right: KeyState::new(),
+            mouse_middle: KeyState::new(),
+            shift: KeyState::new(),
+            ctrl: KeyState::new(),
+            alt: KeyState::new(),
+            escape: KeyState::new(),
+            backspace: KeyState::new(),
         }
     }
 
-    fn get_key_state(key: &KeyState, is_down: bool) -> KeyState {
-        if is_down {
-            KeyState::Pressed
-        } else {
-            KeyState::Released
-        }
-    }
-
-    pub fn set_key_state(&mut self, keycode: sdl2::keyboard::Keycode, is_down: bool) {
-        use sdl2::keyboard::Keycode;
-
+    fn get_key(&mut self, keycode: Keycode) -> &mut KeyState {
         match keycode {
-            Keycode::Backspace => self.backspace = Self::get_key_state(&self.backspace, is_down),
-            Keycode::A => self.a = Self::get_key_state(&self.a, is_down),
-            Keycode::B => self.b = Self::get_key_state(&self.b, is_down),
-            Keycode::C => self.c = Self::get_key_state(&self.c, is_down),
-            Keycode::D => self.d = Self::get_key_state(&self.d, is_down),
-            Keycode::E => self.e = Self::get_key_state(&self.e, is_down),
-            Keycode::F => self.f = Self::get_key_state(&self.f, is_down),
-            Keycode::G => self.g = Self::get_key_state(&self.g, is_down),
-            Keycode::H => self.h = Self::get_key_state(&self.h, is_down),
-            Keycode::I => self.i = Self::get_key_state(&self.i, is_down),
-            Keycode::J => self.j = Self::get_key_state(&self.j, is_down),
-            Keycode::K => self.k = Self::get_key_state(&self.k, is_down),
-            Keycode::L => self.l = Self::get_key_state(&self.l, is_down),
-            Keycode::M => self.m = Self::get_key_state(&self.m, is_down),
-            Keycode::N => self.n = Self::get_key_state(&self.n, is_down),
-            Keycode::O => self.o = Self::get_key_state(&self.o, is_down),
-            Keycode::P => self.p = Self::get_key_state(&self.p, is_down),
-            Keycode::Q => self.q = Self::get_key_state(&self.q, is_down),
-            Keycode::R => self.r = Self::get_key_state(&self.r, is_down),
-            Keycode::S => self.s = Self::get_key_state(&self.s, is_down),
-            Keycode::T => self.t = Self::get_key_state(&self.t, is_down),
-            Keycode::U => self.u = Self::get_key_state(&self.u, is_down),
-            Keycode::V => self.v = Self::get_key_state(&self.v, is_down),
-            Keycode::W => self.w = Self::get_key_state(&self.w, is_down),
-            Keycode::X => self.x = Self::get_key_state(&self.x, is_down),
-            Keycode::Escape => self.esc = Self::get_key_state(&self.esc, is_down),
-            Keycode::Up => self.up = Self::get_key_state(&self.up, is_down),
-            Keycode::Down => self.down = Self::get_key_state(&self.down, is_down),
-            Keycode::Left => self.left = Self::get_key_state(&self.left, is_down),
-            Keycode::Right => self.right = Self::get_key_state(&self.right, is_down),
-            Keycode::Num0 => self._0 = Self::get_key_state(&self._0, is_down),
-            Keycode::Num1 => self._1 = Self::get_key_state(&self._1, is_down),
-            Keycode::Space => self.space = Self::get_key_state(&self.space, is_down),
-            _ => {}
+            Keycode::Backspace => &mut self.backspace,
+            Keycode::A => &mut self.a,
+            Keycode::B => &mut self.b,
+            Keycode::C => &mut self.c,
+            Keycode::D => &mut self.d,
+            Keycode::E => &mut self.e,
+            Keycode::F => &mut self.f,
+            Keycode::G => &mut self.g,
+            Keycode::H => &mut self.h,
+            Keycode::I => &mut self.i,
+            Keycode::J => &mut self.j,
+            Keycode::K => &mut self.k,
+            Keycode::L => &mut self.l,
+            Keycode::M => &mut self.m,
+            Keycode::N => &mut self.n,
+            Keycode::O => &mut self.o,
+            Keycode::P => &mut self.p,
+            Keycode::Q => &mut self.q,
+            Keycode::R => &mut self.r,
+            Keycode::S => &mut self.s,
+            Keycode::T => &mut self.t,
+            Keycode::U => &mut self.u,
+            Keycode::V => &mut self.v,
+            Keycode::W => &mut self.w,
+            Keycode::X => &mut self.x,
+            Keycode::Escape => &mut self.escape,
+            Keycode::Up => &mut self.up,
+            Keycode::Down => &mut self.down,
+            Keycode::Left => &mut self.left,
+            Keycode::Right => &mut self.right,
+            Keycode::Num0 => &mut self._0,
+            Keycode::Num1 => &mut self._1,
+            Keycode::Num2 => &mut self._2,
+            Keycode::Num3 => &mut self._3,
+            Keycode::Num4 => &mut self._4,
+            Keycode::Num5 => &mut self._5,
+            Keycode::Num6 => &mut self._6,
+            Keycode::Num7 => &mut self._7,
+            Keycode::Num8 => &mut self._8,
+            Keycode::Num9 => &mut self._9,
+            Keycode::Space => &mut self.space,
+            _ => todo!("...)")
+            /*
+            Keycode::KpEnter => &mut self.enter,
+            Keycode::Lef => &mut self.mouse_left,
+            Keycode::Num9 => &mut self.mouse_right,
+            Keycode::Num9 => &mut self.mouse_middle,
+            Keycode::Num9 => &mut self.shift,
+            Keycode::Num9 => &mut self.ctrl,
+            Keycode::Num9 => &mut self.alt,
+            Keycode::Num9 => &mut self.escape,
+            Keycode::Num9 => &mut self.alt,
+            Keycode::Num9 => &mut self.backspace,*/
+        }
+    }
+
+    pub fn set_key_state(&mut self, keycode: Keycode, is_down: bool) {
+        let key_state = self.get_key(keycode);
+        if is_down {
+            key_state.press();
+        } else {
+            key_state.release();
         }
     }
 
@@ -199,7 +237,7 @@ impl KeysState {
             &mut self.shift,
             &mut self.ctrl,
             &mut self.alt,
-            &mut self.esc,
+            &mut self.escape,
             &mut self.backspace,
             &mut self._0,
             &mut self._1,

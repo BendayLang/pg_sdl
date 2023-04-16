@@ -12,26 +12,32 @@ mod widgets;
 
 use app::App;
 pub use input::Input;
+use crate::widgets::Button;
+use crate::text::Text;
 
 fn main() {
-    let mut app: App = App::init("benday", 800, 600, 60, true);
+    let mut app: App = App::init("benday", 800, 600, 60, true, Color::RGB(135, 206, 235));
+
+    let mut button = Button::new(
+        Color::RED,
+        rect!(100, 100, 200, 100),
+        Some(Text{
+            text: "Bob".to_string(),
+                ..Default::default()
+        })
+        );
+    let mut button2 = Button{
+        color: Color::GREEN,
+        ..Default::default()
+    };
 
     let mut r = 0;
     let mut text = String::new();
-    let mut radius = 0.0;
 
-    app.main_loop(&mut |app, _delta| {
-        app.background_color = Color::RGB(r, 64, 255 - r);
+    app.main_loop(&mut |app, delta| {
 
-        if radius < 1.0 {
-            radius += 0.2 * _delta;
-        }
-        canvas::fill_rect(
-            &mut app.canvas,
-            rect!(10, 10, 500, 500),
-            Color::GREEN,
-            Some(radius),
-        );
+        button.update(&app.input, delta);
+        button.draw(&mut app.canvas, &mut app.text_drawer);
 
         canvas::fill_rect(
             &mut app.canvas,
@@ -48,24 +54,9 @@ fn main() {
         }
 
         app.text_drawer
-            .draw_text(&mut app.canvas, 1, &text, 130.0, 130.0, 20.0);
+            .draw(&mut app.canvas, 1, &text, point!(130.0, 130.0), 20.0, Color::BLUE);
 
-        draw_circle::fill_circle(
-            &mut app.canvas,
-            point!(app.input.mouse.position.x, app.input.mouse.position.y),
-            40,
-            if app.input.mouse.left_button == input::KeyState::Down {
-                Color::BLUE
-            } else if app.input.mouse.right_button == input::KeyState::Down {
-                Color::YELLOW
-            } else if app.input.mouse.middle_button == input::KeyState::Down {
-                Color::GREEN
-            } else {
-                Color::WHITE
-            },
-        );
-
-        let to_add = (_delta * 20.) as u8;
+        let to_add = (delta * 20.) as u8;
         r = (r + to_add) % 255;
     });
 }
