@@ -11,7 +11,7 @@ pub fn fonts_init() -> Vec<fontdue::Font> {
     )
 }
 
-#[cfg(linux)]
+#[cfg(unix)]
 pub fn fonts_init() -> Vec<fontdue::Font> {
     macros::init_fonts!(
         "/usr/share/fonts/TTF",
