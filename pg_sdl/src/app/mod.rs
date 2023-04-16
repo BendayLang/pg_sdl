@@ -2,26 +2,15 @@ use std::time::Instant;
 
 use sdl2::{render::Canvas, video::Window};
 
-use crate::draw_text;
+use crate::text::TextDrawer;
 
 pub struct App {
-    pub new_background_color: Option<sdl2::pixels::Color>,
     pub input: crate::input::Input,
-    pub video_subsystem: sdl2::VideoSubsystem,
     pub canvas: Canvas<Window>,
-    pub ttf_context: sdl2::ttf::Sdl2TtfContext,
-    pub texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>,
-    pub fonts: Vec<fontdue::Font>,
+    pub text_drawer: TextDrawer,
+    new_background_color: Option<sdl2::pixels::Color>,
     fps: f32,
     draw_fps: bool,
-}
-
-fn fonts_init() -> Vec<fontdue::Font> {
-    let font = include_bytes!("/usr/share/fonts/TTF/VeraBd.ttf") as &[u8];
-    let vera_bd = fontdue::Font::from_bytes(font, Default::default()).unwrap();
-    let font = include_bytes!("/usr/share/fonts/TTF/VeraIt.ttf") as &[u8];
-    let vera_it = fontdue::Font::from_bytes(font, Default::default()).unwrap();
-    vec![vera_it, vera_bd]
 }
 
 impl App {
@@ -33,7 +22,6 @@ impl App {
         draw_fps: bool,
     ) -> Self {
         let sdl_context = sdl2::init().unwrap();
-        let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
         let video_subsystem = sdl_context
             .video()
             .expect("SDL video subsystem could not be initialized");
@@ -44,12 +32,9 @@ impl App {
             .expect("Window could not be created");
         let canvas = window.into_canvas().build().unwrap();
         App {
-            texture_creator: canvas.texture_creator(),
+            text_drawer: TextDrawer::new(canvas.texture_creator()),
             input: crate::input::Input::new(sdl_context),
-            video_subsystem,
             canvas,
-            ttf_context,
-            fonts: fonts_init(),
             new_background_color: None,
             fps: fps as f32,
             draw_fps,
@@ -89,15 +74,22 @@ impl App {
                 last_update_time = std::time::Instant::now();
             }
 
-            {
-                // FPS
+            // FPS
+            if self.draw_fps {
                 frame_count += 1;
                 if frame_time.elapsed().as_secs_f32() > 1.0 / 3.0 {
                     frame_rate = frame_count * 3;
                     frame_count = 0;
                     frame_time = std::time::Instant::now();
                 }
-                draw_text::draw_text(self, 1, &format!("FPS: {}", frame_rate), 10.0, 1.0, 30.0);
+                self.text_drawer.draw_text(
+                    &mut self.canvas,
+                    1,
+                    &format!("FPS: {}", frame_rate),
+                    10.0,
+                    1.0,
+                    30.0,
+                );
             }
 
             {
@@ -109,5 +101,9 @@ impl App {
                 }
             }
         }
+    }
+
+    pub fn set_background_color(&mut self, color: sdl2::pixels::Color) {
+        self.new_background_color = Some(color);
     }
 }

@@ -17,19 +17,6 @@ class App:
 	             size: tuple[int, int] = (1200, 750), fps: int = 60,
 	             resizable: bool = True, quit_on_escape: bool = True,
 	             bt_reset: bool = True, bt_quit: bool = True, draw_fps: bool = True):
-		"""Initialization des variables de l'application."""
-		init()
-		display.set_caption(name)
-		self.window_color: Color = Color(color)
-		
-		self.window_surface: Surface =\
-			display.set_mode(size, RESIZABLE)\
-				if resizable else display.set_mode(size)
-		
-		self.clock: Clock = Clock()
-		self.fps: int = fps
-		
-		self.inputs: Inputs = Inputs()
 		self.camera: Camera = Camera(self.window_size)
 		
 		self.quit_on_escape: bool = quit_on_escape
@@ -48,12 +35,6 @@ class App:
 			self.ui_objects["bt_reset"] = Button(
 			  "wheat 2", self.mirror(Vec2((size.x + self.margin) * 2, self.margin), by_x=True),
 			  size, text="RESET")
-		
-		self.running: bool = True
-		self.changed: bool = True
-		
-		self.key_down_timer: int = 0
-		self.rot = 0
 	
 	def run(self):
 		"""Boucle principale de l’application."""

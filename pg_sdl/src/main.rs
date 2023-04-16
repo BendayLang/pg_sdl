@@ -5,12 +5,16 @@ use sdl2::pixels::Color;
 mod app;
 mod canvas;
 mod draw_circle;
-mod draw_text;
 mod input;
-mod macros;
+mod text;
+mod utils;
 use app::App;
-pub use draw_text::draw_text;
 pub use input::Input;
+
+struct E {
+    x: i32,
+    y: i32,
+}
 
 fn main() {
     let mut app: App = App::init("benday", 800, 600, 120, true);
@@ -20,7 +24,7 @@ fn main() {
     let mut radius = 0.0;
 
     app.main_loop(&mut |app, _delta| {
-        app.new_background_color = Some(Color::RGB(r, 64, 255 - r));
+        app.set_background_color(Color::RGB(r, 64, 255 - r));
 
         if radius < 1.0 {
             radius += 0.1 * _delta;
@@ -46,7 +50,8 @@ fn main() {
             text.pop();
         }
 
-        draw_text(app, 1, &text, 130.0, 130.0, 20.0);
+        app.text_drawer
+            .draw_text(&mut app.canvas, 1, &text, 130.0, 130.0, 20.0);
 
         draw_circle::fill_circle(
             &mut app.canvas,
