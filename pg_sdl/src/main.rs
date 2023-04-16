@@ -8,6 +8,8 @@ mod draw_circle;
 mod input;
 mod text;
 mod utils;
+mod widgets;
+
 use app::App;
 pub use input::Input;
 
@@ -22,7 +24,7 @@ fn main() {
         app.background_color = Color::RGB(r, 64, 255 - r);
 
         if radius < 1.0 {
-            radius += 0.1 * _delta;
+            radius += 0.2 * _delta;
         }
         canvas::fill_rect(
             &mut app.canvas,
