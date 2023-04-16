@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use sdl2::{render::Canvas, video::Window};
+use sdl2::{render::Canvas, video::Window, pixels::Color};
 
 use crate::text::TextDrawer;
 
@@ -8,7 +8,7 @@ pub struct App {
     pub input: crate::input::Input,
     pub canvas: Canvas<Window>,
     pub text_drawer: TextDrawer,
-    new_background_color: Option<sdl2::pixels::Color>,
+    pub background_color: sdl2::pixels::Color,
     fps: f32,
     draw_fps: bool,
 }
@@ -35,7 +35,7 @@ impl App {
             text_drawer: TextDrawer::new(canvas.texture_creator()),
             input: crate::input::Input::new(sdl_context),
             canvas,
-            new_background_color: None,
+            background_color: Color::BLUE,
             fps: fps as f32,
             draw_fps,
         }
@@ -62,10 +62,7 @@ impl App {
             }
 
             // Background color
-            if let Some(color) = self.new_background_color {
-                crate::canvas::fill_background(&mut self.canvas, color);
-                self.new_background_color = None;
-            }
+            crate::canvas::fill_background(&mut self.canvas, self.background_color);
 
             {
                 // Update
@@ -101,9 +98,5 @@ impl App {
                 }
             }
         }
-    }
-
-    pub fn set_background_color(&mut self, color: sdl2::pixels::Color) {
-        self.new_background_color = Some(color);
     }
 }

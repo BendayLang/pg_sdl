@@ -11,20 +11,15 @@ mod utils;
 use app::App;
 pub use input::Input;
 
-struct E {
-    x: i32,
-    y: i32,
-}
-
 fn main() {
-    let mut app: App = App::init("benday", 800, 600, 120, true);
+    let mut app: App = App::init("benday", 800, 600, 60, true);
 
     let mut r = 0;
     let mut text = String::new();
     let mut radius = 0.0;
 
     app.main_loop(&mut |app, _delta| {
-        app.set_background_color(Color::RGB(r, 64, 255 - r));
+        app.background_color = Color::RGB(r, 64, 255 - r);
 
         if radius < 1.0 {
             radius += 0.1 * _delta;
