@@ -1,11 +1,13 @@
 mod key_state;
+mod mouse;
 pub use key_state::{KeyState, KeysState};
 
 pub struct Input {
     event_pump: sdl2::EventPump,
-    pub should_quit: bool,
+    pub window_closed: bool,
     pub keys_state: KeysState,
     pub last_char: Option<char>,
+    pub mouse: mouse::Mouse,
 }
 
 impl Input {
@@ -13,9 +15,10 @@ impl Input {
     pub fn new(sdl_context: sdl2::Sdl) -> Self {
         Input {
             event_pump: sdl_context.event_pump().unwrap(),
-            should_quit: false,
+            window_closed: false,
             keys_state: KeysState::new(),
             last_char: None,
+            mouse: mouse::Mouse::new(),
         }
     }
 
@@ -41,12 +44,14 @@ impl Input {
             }
         };
 
+        self.mouse.get_events();
+
         for event in self.event_pump.poll_iter() {
             use sdl2::event::Event;
+            self.mouse.get_event(event.clone());
             match event {
-                Event::Quit { .. } => self.should_quit = true,
+                Event::Quit { .. } => self.window_closed = true,
                 Event::KeyDown { keycode, .. } => {
-                    println!("key down: {:?}", keycode);
                     sks(keycode, true);
 
                     if let Some(keycode) = keycode {

@@ -1,56 +1,19 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
-use fontdue;
-use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
-use fontdue_sdl2::FontTexture;
-use sdl2::{
-    pixels::Color,
-    rect::Rect,
-    render::{Canvas, TextureCreator},
-    video::{Window, WindowContext},
-};
-use std::time::Duration;
+use sdl2::pixels::Color;
 
 mod app;
 mod canvas;
 mod draw_circle;
+mod draw_text;
 mod input;
+mod macros;
 use app::App;
+pub use draw_text::draw_text;
 pub use input::Input;
 
-#[macro_export]
-macro_rules! rect(
-    ($x:expr, $y:expr, $w:expr, $h:expr) => (
-        Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
-    )
-);
-
-#[macro_export]
-macro_rules! point(
-    ($x:expr, $y:expr) => (
-        sdl2::rect::Point::new($x as i32, $y as i32)
-    )
-);
-
-fn draw_text(app: &mut App, font_index: usize, text: &str, x: f32, y: f32, font_size: f32) {
-    let mut font_texture = FontTexture::new(&app.texture_creator).unwrap();
-    let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-    layout.reset(&LayoutSettings {
-        x,
-        y,
-        ..Default::default()
-    });
-    layout.append(
-        &app.fonts,
-        &TextStyle::with_user_data(text, font_size, font_index, Color::RGB(0xFF, 0xFF, 0)),
-    );
-    font_texture
-        .draw_text(&mut app.canvas, &app.fonts, layout.glyphs())
-        .unwrap();
-}
-
 fn main() {
-    let mut app: App = App::init("benday", 800, 600);
+    let mut app: App = App::init("benday", 800, 600, 120, true);
 
     let mut r = 0;
     let mut text = String::new();
@@ -58,8 +21,9 @@ fn main() {
 
     app.main_loop(&mut |app, _delta| {
         app.new_background_color = Some(Color::RGB(r, 64, 255 - r));
+
         if radius < 1.0 {
-            radius += 0.01;
+            radius += 0.1 * _delta;
         }
         canvas::fill_rect(
             &mut app.canvas,
@@ -86,11 +50,20 @@ fn main() {
 
         draw_circle::fill_circle(
             &mut app.canvas,
-            point!(100, 100),
-            r as i32,
-            Color::RGB(255, 255, 255),
+            point!(app.input.mouse.position.x, app.input.mouse.position.y),
+            40,
+            if app.input.mouse.left_button == input::KeyState::Down {
+                Color::BLUE
+            } else if app.input.mouse.right_button == input::KeyState::Down {
+                Color::YELLOW
+            } else if app.input.mouse.middle_button == input::KeyState::Down {
+                Color::GREEN
+            } else {
+                Color::WHITE
+            },
         );
 
-        r = (r + 1) % 255;
+        let to_add = (_delta * 20.) as u8;
+        r = (r + to_add) % 255;
     });
 }

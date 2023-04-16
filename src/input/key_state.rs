@@ -157,9 +157,7 @@ impl KeysState {
             Keycode::Num0 => self._0 = Self::get_key_state(&self._0, is_down),
             Keycode::Num1 => self._1 = Self::get_key_state(&self._1, is_down),
             Keycode::Space => self.space = Self::get_key_state(&self.space, is_down),
-            _ => {
-                println!("Keycode: {:?}", keycode);
-            }
+            _ => {}
         }
     }
 
