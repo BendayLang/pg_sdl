@@ -1,4 +1,6 @@
 mod fonts_init;
+use std::collections::HashMap;
+
 use fontdue;
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use fontdue_sdl2::FontTexture;
@@ -8,13 +10,17 @@ use sdl2::video::Window;
 pub struct TextDrawer {
     pub texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>,
     pub fonts: Vec<fontdue::Font>,
+    pub fonts_id: HashMap<String, usize>,
 }
 
 impl TextDrawer {
     pub fn new(texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>) -> Self {
+        let (fonts, fonts_id) = fonts_init::fonts_init();
+        println!("{:?}", fonts_id);
         TextDrawer {
             texture_creator,
-            fonts: fonts_init::fonts_init(),
+            fonts,
+            fonts_id,
         }
     }
 
