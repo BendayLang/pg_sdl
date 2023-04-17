@@ -16,40 +16,10 @@ pub use input::Input;
 fn main() {
     let mut app: App = App::init("benday", 800, 600, 60, true);
 
-    let mut r = 0;
-    let mut text = String::new();
-    let mut radius = 0.0;
-
     app.main_loop(&mut |app, _delta| {
-        app.background_color = Color::RGB(r, 64, 255 - r);
-
-        if radius < 1.0 {
-            radius += 0.2 * _delta;
-        }
-        canvas::fill_rect(
-            &mut app.canvas,
-            rect!(10, 10, 500, 500),
-            Color::GREEN,
-            Some(radius),
-        );
-
-        canvas::fill_rect(
-            &mut app.canvas,
-            rect!(500, 500, 200, 350),
-            Color::RED,
-            Some(0.3),
-        );
-
-        if let Some(last_char) = app.input.last_char {
-            text.push(last_char);
-        }
-        if app.input.keys_state.backspace == input::KeyState::Pressed {
-            text.pop();
-        }
-
+        app.background_color = Color::BLACK;
         app.text_drawer
-            .draw_text(&mut app.canvas, 1, &text, 130.0, 130.0, 20.0);
-
+            .draw_text(&mut app.canvas, 1, "salut !", 130.0, 130.0, 20.0);
         draw_circle::fill_circle(
             &mut app.canvas,
             point!(app.input.mouse.position.x, app.input.mouse.position.y),
@@ -64,8 +34,5 @@ fn main() {
                 Color::WHITE
             },
         );
-
-        let to_add = (_delta * 20.) as u8;
-        r = (r + to_add) % 255;
     });
 }

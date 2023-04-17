@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies.sdl2]
 version = "0.35.2"
-features = ["ttf"]
 
 [dependencies]
 fontdue-sdl2 = "0.3"
