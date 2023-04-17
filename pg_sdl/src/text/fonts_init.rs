@@ -7,8 +7,7 @@ The fonts are loaded from the system at compile time (using the `include_bytes!`
 pub fn fonts_init() -> Vec<fontdue::Font> {
     macros::init_fonts!(
         "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts",
-        "DejaVuSans.ttf",
-        "DejaVuSans.ttf",
+        ["DejaVuSans.ttf", "DejaVuSans.ttf"]
     )
 }
 

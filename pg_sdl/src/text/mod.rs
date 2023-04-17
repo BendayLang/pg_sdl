@@ -24,6 +24,11 @@ impl TextDrawer {
         }
     }
 
+    // TODO use this to call the [draw_text] fn with a font name instead of its index
+    fn font_index_from_name(&self, name: &str) -> Option<&usize> {
+        self.fonts_id.get(name)
+    }
+
     pub fn draw_text(
         &mut self,
         canvas: &mut Canvas<Window>,
