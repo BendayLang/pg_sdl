@@ -34,18 +34,22 @@ impl TextDrawer {
         color: Color,
     ) {
         let mut font_texture = FontTexture::new(&self.texture_creator).unwrap();
-        println!("{}",  font_texture.texture.query().width);
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
         layout.reset(&LayoutSettings {
             x: position.x as f32,
             y: position.y as f32,
-            ..Default::default()
+            horizontal_align: fontdue::layout::HorizontalAlign::Center,
+            vertical_align: fontdue::layout::VerticalAlign::Top,
+            max_height: None,
+            max_width: None,
+            wrap_style: fontdue::layout::WrapStyle::Word,
+            wrap_hard_breaks: true,
+            line_height: 0.1,
         });
         layout.append(
             &self.fonts,
             &TextStyle::with_user_data(text, font_size, font_index, color),
         );
-        println!("{}",  font_texture.texture.query().width);
         font_texture
             .draw_text(canvas, &self.fonts, layout.glyphs())
             .unwrap();
