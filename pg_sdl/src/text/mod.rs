@@ -1,4 +1,5 @@
 mod fonts_init;
+mod q_draw_text;
 use std::collections::HashMap;
 
 use fontdue;
