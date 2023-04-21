@@ -4,89 +4,53 @@ use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-pub fn fill_circle(canvas: &mut Canvas<Window>, center: Point, radius: i32, color: Color) {
-    let (mut offsetx, mut offsety, mut d) = (0, radius, radius - 1);
-    canvas.set_draw_color(color);
-    while offsety >= offsetx {
-        canvas
-            .draw_line(
-                point!(center.x - offsetx, center.y + offsety),
-                point!(center.x + offsetx, center.y + offsety),
-            )
-            .unwrap();
 
-        canvas
-            .draw_line(
-                point!(center.x - offsetx, center.y - offsety),
-                point!(center.x + offsetx, center.y - offsety),
-            )
-            .unwrap();
-        canvas
-            .draw_line(
-                point!(center.x - offsety, center.y - offsetx),
-                point!(center.x + offsety, center.y - offsetx),
-            )
-            .unwrap();
-        canvas
-            .draw_line(
-                point!(center.x - offsety, center.y + offsetx),
-                point!(center.x + offsety, center.y + offsetx),
-            )
-            .unwrap();
-
-        if d >= 2 * offsetx {
-            d -= 2 * offsetx + 1;
-            offsetx += 1;
-        } else if d < 2 * (radius - offsety) {
-            d += 2 * offsety - 1;
-            offsety -= 1;
-        } else {
-            d += 2 * (offsety - offsetx - 1);
-            offsety -= 1;
-            offsetx += 1;
-        }
-    }
+pub fn fill_circle(canvas: &mut Canvas<Window>, center: Point, radius: i32) {
+	let (mut x, mut y, mut d) = (0, radius, radius - 1);
+	
+	while y >= x {
+		for (start_point, end_point) in [
+			(point!(-x, -y), point!(x, -y)),
+			(point!(-y, -x), point!(y, -x)),
+			(point!(-x, y), point!(x, y)),
+			(point!(-y, x), point!(y, x)),
+		] { canvas.draw_line(center + start_point, center + end_point).unwrap(); }
+		
+		if d >= 2 * x {
+			d -= 2 * x + 1;
+			x += 1;
+		} else if d < 2 * (radius - y) {
+			d += 2 * y - 1;
+			y -= 1;
+		} else {
+			d += 2 * (y - x - 1);
+			y -= 1;
+			x += 1;
+		}
+	}
 }
 
-pub fn draw_circle(canvas: &mut Canvas<Window>, center: Point, radius: i32, color: Color) {
-    let (mut offsetx, mut offsety, mut d) = (0, radius, radius - 1);
-    canvas.set_draw_color(color);
-    while offsety >= offsetx {
-        canvas
-            .draw_point(point!(center.x + offsetx, center.y + offsety))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x + offsety, center.y + offsetx))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x - offsetx, center.y + offsety))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x - offsety, center.y + offsetx))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x + offsetx, center.y - offsety))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x + offsety, center.y - offsetx))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x - offsetx, center.y - offsety))
-            .unwrap();
-        canvas
-            .draw_point(point!(center.x - offsety, center.y - offsetx))
-            .unwrap();
-
-        if d >= 2 * offsetx {
-            d -= 2 * offsetx + 1;
-            offsetx += 1;
-        } else if d < 2 * (radius - offsety) {
-            d += 2 * offsety - 1;
-            offsety -= 1;
-        } else {
-            d += 2 * (offsety - offsetx - 1);
-            offsety -= 1;
-            offsetx += 1;
-        }
-    }
+pub fn draw_circle(canvas: &mut Canvas<Window>, center: Point, radius: i32, width: i32) {
+	let (mut x, mut y, mut d) = (0, radius, radius - 1);
+	
+	while y >= x {
+		for point in [
+			point!(-x, -y), point!(x, -y),
+			point!(-y, -x), point!(y, -x),
+			point!(-x, y), point!(x, y),
+			point!(-y, x), point!(y, x),
+		] { canvas.draw_point(center + point).unwrap(); }
+		
+		if d >= 2 * x {
+			d -= 2 * x + 1;
+			x += 1;
+		} else if d < 2 * (radius - y) {
+			d += 2 * y - 1;
+			y -= 1;
+		} else {
+			d += 2 * (y - x - 1);
+			y -= 1;
+			x += 1;
+		}
+	}
 }

@@ -31,12 +31,6 @@ impl Input {
             key_state.update()
         }
 
-        let sks = &mut |keycode: Option<sdl2::keyboard::Keycode>, is_down: bool| -> () {
-            if let Some(keycode) = keycode {
-                self.keys_state.set_key_state(keycode, is_down);
-            }
-        };
-
         self.mouse.get_events();
 
         for event in self.event_pump.poll_iter() {
@@ -45,7 +39,11 @@ impl Input {
             match event {
                 Event::Quit { .. } => self.window_closed = true,
                 Event::KeyDown { keycode, .. } => {
-                    sks(keycode, true);
+                    if let Some(keycode) = keycode{
+                        self.keys_state.press_key(keycode);
+                    }
+
+                    // sks(keycode, true);
 
                     if let Some(keycode) = keycode {
                         let c = keycode as u8 as char;
@@ -57,7 +55,11 @@ impl Input {
                         }
                     }
                 }
-                Event::KeyUp { keycode, .. } => sks(keycode, false),
+                Event::KeyUp { keycode, .. } => {
+                    if let Some(keycode) = keycode{
+                        self.keys_state.release_key(keycode);
+                    }
+                },
                 _ => {}
             }
         }

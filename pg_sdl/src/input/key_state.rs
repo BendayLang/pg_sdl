@@ -1,12 +1,7 @@
 use sdl2::keyboard::Keycode;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum KeyState {
-    Up,
-    Pressed,
-    Down,
-    Released,
-}
+pub enum KeyState { Up, Pressed, Down, Released }
 
 impl KeyState {
     pub fn new() -> Self { Self::Up }
@@ -17,6 +12,7 @@ impl KeyState {
             _ => {}
         };
     }
+
     pub fn press(&mut self) { *self = Self::Pressed }
     pub fn release(&mut self) { *self = Self::Released }
 
@@ -175,29 +171,16 @@ impl KeysState {
             Keycode::Num8 => &mut self._8,
             Keycode::Num9 => &mut self._9,
             Keycode::Space => &mut self.space,
-            _ => todo!("...)")
-            /*
-            Keycode::KpEnter => &mut self.enter,
-            Keycode::Lef => &mut self.mouse_left,
-            Keycode::Num9 => &mut self.mouse_right,
-            Keycode::Num9 => &mut self.mouse_middle,
-            Keycode::Num9 => &mut self.shift,
-            Keycode::Num9 => &mut self.ctrl,
-            Keycode::Num9 => &mut self.alt,
-            Keycode::Num9 => &mut self.escape,
-            Keycode::Num9 => &mut self.alt,
-            Keycode::Num9 => &mut self.backspace,*/
+            Keycode::Return => &mut self.enter,
+            
+            Keycode::LCtrl => &mut self.space,
+            Keycode::RCtrl => &mut self.space,
+            _ => todo!("mettre toutes les keys"),
         }
     }
 
-    pub fn set_key_state(&mut self, keycode: Keycode, is_down: bool) {
-        let key_state = self.get_key(keycode);
-        if is_down {
-            key_state.press();
-        } else {
-            key_state.release();
-        }
-    }
+    pub fn press_key(&mut self, keycode: Keycode) { self.get_key(keycode).press(); }
+    pub fn release_key(&mut self, keycode: Keycode) { self.get_key(keycode).release(); }
 
     pub fn as_mut_array(&mut self) -> [&mut KeyState; 48] {
         [
