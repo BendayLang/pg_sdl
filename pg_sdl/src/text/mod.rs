@@ -36,7 +36,10 @@ impl TextDrawer {
     ) {
         let mut font_texture = FontTexture::new(&self.texture_creator).unwrap();
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-
+        
+        if width == None{
+            let width = text.text.len() as f32 * text.font_size;
+        }
         layout.reset(&LayoutSettings {
             x: position.x as f32,
             y: position.y as f32,
@@ -45,7 +48,7 @@ impl TextDrawer {
             horizontal_align,
             vertical_align,
             wrap_style: fontdue::layout::WrapStyle::Word,
-            wrap_hard_breaks: true,
+            wrap_hard_breaks: false,
             line_height: 1.,
         });
         layout.append(
@@ -56,8 +59,6 @@ impl TextDrawer {
                 text.font_index,
                 text.color),
         );
-        font_texture
-            .draw_text(canvas, &self.fonts, layout.glyphs())
-            .unwrap();
+        font_texture.draw_text(canvas, &self.fonts, layout.glyphs()).unwrap();
     }
 }

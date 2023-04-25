@@ -3,10 +3,10 @@ use fontdue::layout::{HorizontalAlign, VerticalAlign};
 
 use sdl2::{render::Canvas, video::Window, pixels::Color};
 use sdl2::render::WindowCanvas;
-use crate::{Input, MyApp, point, rect, Text};
+use crate::{Input, MyApp, point, rect, text};
 use crate::canvas::{fill_background};
 
-use crate::text::TextDrawer;
+use crate::text::{Text, TextDrawer};
 
 pub type UpdateFn = fn(&mut MyApp, f32, &Input) -> bool;
 pub type DrawFn = fn(&mut MyApp, &mut Canvas<Window>, &mut TextDrawer);

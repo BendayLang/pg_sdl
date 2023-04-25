@@ -1,10 +1,25 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
 use std::borrow::BorrowMut;
+use std::collections::HashMap;
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
+use itertools::Itertools;
+use num::Num;
 use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
 use sdl2::render::{Canvas, WindowCanvas};
 use sdl2::video::Window;
+
+use app::App;
+use input::Input;
+use crate::blocs::Bloc;
+use crate::canvas::{fill_rect};
+use crate::color::{hsv_color, darker, paler, Colors};
+use crate::draw_circle::{draw_circle, fill_circle};
+use crate::widgets::{Button, Orientation, Slider};
+use crate::text::{Text, TextDrawer};
+use crate::widgets::Widget;
+
 
 mod app;
 mod canvas;
@@ -14,64 +29,71 @@ mod text;
 mod utils;
 mod widgets;
 mod color;
-
-use app::App;
-pub use input::Input;
-use crate::canvas::{fill_rect};
-use crate::color::{hsv_color, darker, paler, Colors};
-use crate::draw_circle::{draw_circle, fill_circle};
-use crate::widgets::{Button, Orientation, Slider};
-use crate::text::{Text, TextDrawer};
-use crate::widgets::Widget;
+mod camera;
+mod blocs;
 
 
 pub struct MyApp {
-	button1: Button,
-	button2: Button,
-	slider1: Slider<i32>,
-	slider2: Slider<f32>,
+	buttons: Vec<Button>,
+	sliders: Vec<Slider>,
+	blocs: HashMap<u32, Bloc>,
 	text: String,
 }
 
+
 fn main() {
 	let my_app = &mut MyApp {
-		button1: Button::new(
-			Colors::ROYAL_BLUE,
-			rect!(100, 100,200,100),
-			Some(7),
-			Some(Text { text: "Réponse à Loïc".to_string(), ..Default::default() }),
-		),
-		button2: Button::new(
-			Colors::GREY,
-			rect!(550, 20, 80, 50),
-			Some(7),
-			None,
-		),
-		slider1: Slider::new(
-			Colors::GREEN,
-			rect!(500, 150, 180, 18),
-			Some(4),
-			[-10, 8],
-			Some(2),
-			0,
-		),
-		slider2: Slider::new(
-			Colors::ORANGE,
-			rect!(700, 80, 30, 150),
-			Some(14),
-			[0.0, 2.0],
-			None,
-			1.0,
-		),
+		buttons: vec![
+			Button::new(
+				Colors::ROYAL_BLUE,
+				rect!(100, 100, 200, 100),
+				Some(9),
+				Some(Text { text: "Réponse à Loïc".to_string(), ..Default::default() })),
+			Button::new(
+				Colors::GREY,
+				rect!(550, 20, 80, 50),
+				Some(7),
+				None,
+			)],
+		sliders: vec![
+			Slider::new(
+				Colors::GREEN,
+				rect!(500, 150, 180, 18),
+				Some(4),
+				[-10, 8],
+				Some(2),
+				0,
+			),
+			Slider::new(
+				Colors::ORANGE,
+				rect!(700, 80, 30, 150),
+				Some(14),
+				[0, 2],
+				None,
+				1,
+			)],
+		blocs: HashMap::from([(0, Bloc::new(
+			Colors::MAGENTA, rect!(120, 230, 110, 80),
+		))]),
 		text: String::new(),
 	};
 	
 	fn update(app: &mut MyApp, delta: f32, input: &Input) -> bool {
 		let mut changed = false;
-		changed |= app.button1.update(&input, delta);
-		changed |= app.button2.update(&input, delta);
-		changed |= app.slider1.update(&input, delta);
-		changed |= app.slider2.update(&input, delta);
+		
+		let widgets: Vec<&mut dyn Widget> = app.buttons.iter_mut()
+		                                       .map(|button| button as &mut dyn Widget)
+		                                       .chain(app.sliders.iter_mut()
+		                                                 .map(|slider| slider as &mut dyn Widget))
+		                                       .collect();
+		
+		for widget in widgets {
+			changed |= widget.update(&input, delta);
+		}
+		
+		if app.buttons[0].state.is_pressed() {
+			app.sliders[0].value = app.sliders[0].span[0];
+		}
 		
 		if let Some(last_char) = input.last_char {
 			app.text.push(last_char);
@@ -85,10 +107,29 @@ fn main() {
 	}
 	
 	fn draw(app: &mut MyApp, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-		app.button1.draw(canvas, text_drawer);
-		app.button2.draw(canvas, text_drawer);
-		app.slider1.draw(canvas, text_drawer);
-		app.slider2.draw(canvas, text_drawer);
+		let widgets = app.buttons.iter_mut()
+		                 .map(|button| button as &mut dyn Widget)
+		                 .chain(app.sliders.iter_mut()
+		                           .map(|slider| slider as &mut dyn Widget))
+		                 .collect::<Vec<&mut dyn Widget>>();
+		
+		for widget in widgets {
+			widget.draw(canvas, text_drawer);
+		}
+		canvas.set_draw_color(Colors::VIOLET);
+		draw_circle(canvas, point!(500, 400), 100, 20);
+		
+		canvas.set_draw_color(Colors::RED_ORANGE);
+		let width: u32 = 20;
+		let rect = rect!(650, 350, 150, 100);
+		let rects = (0..width).map(|i| rect!(rect.x as u32 + i, rect.y as u32 + i,
+			rect.width() - 2 * i, rect.height() - 2 * i))
+		                      .collect::<Vec<Rect>>();
+		canvas.draw_rects(&rects).unwrap();
+		
+		for (id, bloc) in &app.blocs {
+			bloc.draw(canvas, text_drawer);
+		}
 		
 		let text = app.text.clone();
 		text_drawer.draw(canvas,
@@ -98,9 +139,6 @@ fn main() {
 		                 None,
 		                 HorizontalAlign::Left,
 		                 VerticalAlign::Top);
-		
-		fill_rect(canvas, rect!(400, 250, 80, 120), Some(90));
-		fill_rect(canvas, rect!(600, 310, 120, 80), Some(90));
 	}
 	
 	let mut app: App = App::init(

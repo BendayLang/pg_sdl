@@ -13,12 +13,12 @@ impl Colors {
 	pub const RED: Color = Color::RGB(255, 0, 0);
 	pub const RED_ORANGE: Color = Color::RGB(255, 63, 0);
 	pub const ORANGE: Color = Color::RGB(255, 127, 0);
-	pub const ORANGE_YELLOW: Color = Color::RGB(255, 191, 0);
+	pub const AMBER: Color = Color::RGB(255, 191, 0);
 	pub const YELLOW: Color = Color::RGB(255, 255, 0);
 	
-	pub const CHARTREUSE_GREEN: Color = Color::RGB(127, 255, 0);
+	pub const CHARTREUSE: Color = Color::RGB(127, 255, 0);
 	pub const GREEN: Color = Color::RGB(0, 255, 0);
-	pub const SPRING_GREEN: Color = Color::RGB(0, 255, 127);
+	pub const LIME: Color = Color::RGB(0, 255, 127);
 	pub const CYAN: Color = Color::RGB(0, 255, 255);
 	
 	pub const AZURE: Color = Color::RGB(0, 127, 255);

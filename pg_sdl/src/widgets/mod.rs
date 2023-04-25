@@ -1,11 +1,11 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::ops::{Add, Mul, Sub};
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use crate::canvas::{fill_rect};
+use crate::canvas::{draw_rect, draw_rounded_rect, fill_rect};
 use crate::{App, Input, paler, point, rect};
 use crate::color::{Colors, darker, hsv_color};
 use crate::input::KeyState;
@@ -13,12 +13,18 @@ use crate::text::TextDrawer;
 use crate::text::Text;
 use num::NumCast;
 
+const HOVER: f32 = 0.94;
+const PUSH: f32 = 0.80;
 
+/// A widget is a UI object that can be interacted with to take inputs from the user.
 pub trait Widget {
+	/// Update the widget based on the inputs
 	fn update(&mut self, input: &Input, delta: f32) -> bool;
+	/// Draw the widget on the canvas
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
 
+/// A button is a simple widget, it can just be clicked.
 pub struct Button {
 	color: Color,
 	hovered_color: Color,
@@ -26,21 +32,21 @@ pub struct Button {
 	rect: Rect,
 	corner_radius: Option<u32>,
 	text: Option<Text>,
-	pub state: KeyState,
 	hovered: bool,
+	pub state: KeyState,
 }
 
 impl Button {
 	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>, text: Option<Text>) -> Self {
 		Self {
 			color,
-			hovered_color: darker(color, 0.92),
-			pushed_color: darker(color, 0.7),
+			hovered_color: darker(color, HOVER),
+			pushed_color: darker(color, PUSH),
 			rect,
 			corner_radius,
 			text,
-			state: KeyState::new(),
 			hovered: false,
+			state: KeyState::new(),
 		}
 	}
 }
@@ -68,16 +74,18 @@ impl Widget for Button {
 	}
 	
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-		let color = if self.state.is_pressed() | self.state.is_down() {
+		canvas.set_draw_color(if self.state.is_pressed() | self.state.is_down() {
 			self.pushed_color
 		} else if self.hovered {
 			self.hovered_color
 		} else {
 			self.color
-		};
-		
-		canvas.set_draw_color(color);
+		});
 		fill_rect(canvas, self.rect, self.corner_radius);
+		canvas.set_draw_color(Colors::BLACK);
+		if let Some(radius) = self.corner_radius {
+			//draw_rounded_rect(canvas, self.rect, radius);
+		}
 		
 		if let Some(text) = &self.text {
 			text_drawer.draw(canvas,
@@ -91,100 +99,92 @@ impl Widget for Button {
 	}
 }
 
+// #[derive(PartialEq)]
 pub enum Orientation { Horizontal, Vertical }
-/*
-struct T<T> where T: Copy + Sub + Sub<Output=T> + Add + Add<Output=T> + Mul + Mul<Output=T>
-+ num::ToPrimitive + NumCast + Display + PartialEq + Default;
- */
 
-pub struct Slider<T> {
+pub enum SliderType { Discret, Continuous }
+
+/// A slider is a widget that can be dragged to change a value.
+pub struct Slider {
 	color: Color,
 	back_color: Color,
-	pad_color: Color,
-	pad_hovered_color: Color,
-	pad_pushed_color: Color,
+	hovered_color: Color,
+	hovered_back_color: Color,
+	thumb_color: Color,
+	hovered_thumb_color: Color,
+	pushed_thumb_color: Color,
 	rect: Rect,
 	orientation: Orientation,
 	corner_radius: Option<u32>,
-	pub state: KeyState,
 	hovered: bool,
-	span: [T; 2],
-	snap: Option<T>,
-	value: T,
+	pub state: KeyState,
+	pub min: i32,
+	pub max: i32,
+	slider_type: SliderType,
+	pub value: i32,
+	raw_value: f32,
 }
 
-impl<T> Slider<T> where T: Copy + Sub + Sub<Output = T> + Add + Add<Output = T> + Mul + Mul<Output = T>
-+ num::ToPrimitive + NumCast + Display + PartialEq + Default {
+impl Slider {
+	/// Create a new slider.
+	/// - **min / max** is the range of values the slider can take.
+	/// - **slider type** discrete or continuous.
+	/// - **value** is the initial value of the slider.
 	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>,
-	           span: [T; 2], snap: Option<T>, value: T) -> Self {
+	           span: [i32; 2], slider_type: SliderType, value: i32) -> Self {
 		let orientation = {
 			if rect.width() > rect.height() { Orientation::Horizontal } else { Orientation::Vertical }
 		};
-		let pad_color = Colors::LIGHT_GREY;
+		let thumb_color = Colors::LIGHT_GREY;
+		let back_color = darker(paler(color, 0.5), 0.9);
 		Self {
 			color,
-			back_color: darker(paler(color, 0.5), 0.9),
-			pad_color,
-			pad_hovered_color: darker(pad_color, 0.92),
-			pad_pushed_color: darker(pad_color, 0.7),
+			back_color,
+			hovered_color: darker(color, HOVER),
+			hovered_back_color: darker(back_color, HOVER),
+			thumb_color,
+			hovered_thumb_color: darker(thumb_color, HOVER),
+			pushed_thumb_color: darker(thumb_color, PUSH),
 			rect,
 			orientation,
 			corner_radius,
-			state: KeyState::new(),
 			hovered: false,
-			span,
-			snap,
+			state: KeyState::new(),
+			min: 0,
+			max: 0,
+			slider_type,
 			value,
+			raw_value: 0.0,
 		}
 	}
 	
-	fn pad_position(&self) -> i32 {
-		let span0: f32 = NumCast::from(self.span[0]).unwrap_or_default();
-		let span1: f32 = NumCast::from(self.span[1]).unwrap_or_default();
-		let value: f32 = NumCast::from(self.value).unwrap_or_default();
-		let length: f32 = (self.length() - self.width()) as f32;
-		
-		((value - span0) * length / (span1 - span0)) as i32
-	}
-	
-	fn point_value(&self, point: Point) -> T {
-		let pad_position: f32 = match self.orientation {
-			Orientation::Horizontal => point.x as f32 - self.rect.left() as f32,
-			Orientation::Vertical => point.y as f32 - self.rect.top() as f32,
-		} - self.width() as f32 / 2.0;
-		let length: f32 = (self.length() - self.width()) as f32;
-		
-		if pad_position / length <= 0.0 { return self.span[0]; } else if pad_position / length >= 1.0 { return self.span[1]; }
-		
-		let span0: f32 = NumCast::from(self.span[0]).unwrap_or_default();
-		let span1: f32 = NumCast::from(self.span[1]).unwrap_or_default();
-		
-		let mut value: f32 = span0 + pad_position * (span1 - span0) / length;
+	fn get_value(&self) -> i32 {
+		let value = self.span[0] as f32 + self.raw_value * (self.span[1] - self.span[0]) as f32;
 		if let Some(snap) = self.snap {
-			let snap: f32 = NumCast::from(snap).unwrap_or_default();
-			value = (value / snap).round() * snap;
+			(value / snap as f32).round() as i32 * snap as i32
+		} else {
+			value.round() as i32
 		}
-		let value: T = NumCast::from(value).unwrap_or_default();
-		value
 	}
+	
+	fn thumb_position(&self) -> u32 { (self.raw_value * self.length() as f32) as u32 }
 	
 	fn length(&self) -> u32 {
 		match self.orientation {
-			Orientation::Horizontal => self.rect.width(),
-			Orientation::Vertical => self.rect.height()
+			Orientation::Horizontal => self.rect.width() - self.rect.height(),
+			Orientation::Vertical => self.rect.height() - self.rect.width(),
 		}
 	}
 	
-	fn width(&self) -> u32 {
+	fn thickness(&self) -> u32 {
 		match self.orientation {
 			Orientation::Horizontal => self.rect.height(),
-			Orientation::Vertical => self.rect.width()
+			Orientation::Vertical => self.rect.width(),
 		}
 	}
 }
 
-impl<T> Widget for Slider<T> where T: Copy + Add + Add<Output = T> + Sub + Sub<Output = T> + Mul +
-Mul<Output = T> + num::ToPrimitive + NumCast + Display + PartialEq + Default {
+impl Widget for Slider {
 	fn update(&mut self, input: &Input, delta: f32) -> bool {
 		let mut changed = false;
 		self.state.update();
@@ -203,11 +203,24 @@ Mul<Output = T> + num::ToPrimitive + NumCast + Display + PartialEq + Default {
 			changed = true;
 		}
 		
-		if self.state.is_down() {
-			let value = self.point_value(input.mouse.position);
-			if value != self.value {
-				self.value = value;
+		if self.state.is_pressed() | self.state.is_down() {
+			let raw_value = {
+				let point = input.mouse.position;
+				let thumb_position = match self.orientation {
+					Orientation::Horizontal => point.x() - self.rect.left(),
+					Orientation::Vertical => self.rect.bottom() - point.y(),
+				} - self.thickness() as i32 / 2;
+				thumb_position.clamp(0, self.length() as i32) as f32 / self.length() as f32
+			};
+			
+			if raw_value != self.raw_value {
+				self.raw_value = raw_value;
 				changed = true;
+				
+				let value = self.get_value();
+				if value != self.value {
+					self.value = value;
+				}
 			}
 		}
 		
@@ -217,53 +230,71 @@ Mul<Output = T> + num::ToPrimitive + NumCast + Display + PartialEq + Default {
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
 		let b: f32 = 0.7;
 		
+		// Back bar
+		let margin = (self.thickness() as f32 * (1.0 - b) / 2.0) as u32;
+		
 		let (back_rect, rect) = match self.orientation {
 			Orientation::Horizontal => {
 				(rect!(
-					self.rect.left() + self.pad_position() + self.width() as i32 / 2,
-					self.rect.top() as f32 + self.width() as f32 * (1.0 - b) / 2.0,
-					self.rect.width() - self.pad_position() as u32 - self.width() / 2,
+					self.rect.left() + (self.thumb_position() + self.thickness() / 2) as i32,
+					self.rect.top() + margin as i32,
+					self.rect.width() - self.thumb_position() as u32 - self.thickness() / 2 -margin,
 					self.rect.height() as f32 * b),
 				 rect!(
-					 self.rect.left(),
-					 self.rect.top() as f32 + self.width() as f32 * (1.0 - b) / 2.0,
-					 self.pad_position() + self.width() as i32 / 2,
+					 self.rect.left() + margin as i32,
+					 self.rect.top() + margin as i32,
+					 self.thumb_position() + self.thickness() / 2 - margin,
 					 self.rect.height() as f32 * b))
 			}
 			Orientation::Vertical => {
 				(rect!(
-					self.rect.left() as f32 + self.width() as f32 * (1.0 - b) / 2.0,
-					self.rect.top(),
+					self.rect.left() + margin as i32,
+					self.rect.top() + margin as i32,
 					self.rect.width() as f32 * b,
-					self.pad_position() + self.width() as i32 / 2),
+					self.rect.height() - self.thumb_position() - self.thickness() / 2 - margin),
 				 rect!(
-					 self.rect.left() as f32 + self.width() as f32 * (1.0 - b) / 2.0,
-					 self.rect.top() + self.pad_position() + self.width() as i32 / 2,
+					 self.rect.left() + margin as i32,
+					 self.rect.bottom() - (self.thumb_position() + self.thickness() / 2) as i32,
 					 self.rect.width() as f32 * b,
-					 self.rect.height() - self.pad_position() as u32 - self.width() / 2))
+					 self.thumb_position() + self.thickness() / 2 -margin))
 			}
 		};
-		canvas.set_draw_color(self.back_color);
+		
+		canvas.set_draw_color(if self.hovered | self.state.is_pressed() | self.state.is_down() {
+			self.hovered_back_color
+		} else { self.back_color });
 		fill_rect(canvas, back_rect, self.corner_radius);
-		canvas.set_draw_color(self.color);
+		canvas.set_draw_color(if self.hovered | self.state.is_pressed() | self.state.is_down() {
+			self.hovered_color
+		} else { self.color });
 		fill_rect(canvas, rect, self.corner_radius);
 		
+		// Pad
 		canvas.set_draw_color(
 			if self.state.is_pressed() | self.state.is_down() {
-				self.pad_pushed_color
+				self.pushed_thumb_color
 			} else if self.hovered {
-				self.pad_hovered_color
+				self.hovered_thumb_color
 			} else {
-				self.pad_color
+				self.thumb_color
 			}
 		);
-		
 		let rect = match self.orientation {
 			Orientation::Horizontal => rect!(
-				self.rect.left() + self.pad_position(), self.rect.top(), self.width(), self.width()),
+				self.rect.left() + self.thumb_position() as i32, self.rect.top(),
+				self.thickness(), self.thickness()),
 			Orientation::Vertical => rect!(
-				self.rect.left(), self.rect.top() + self.pad_position(), self.width(), self.width())
+				self.rect.left(), self.rect.bottom() - self.thumb_position() as i32 - self.thickness() as i32,
+				self.thickness(), self.thickness())
 		};
 		fill_rect(canvas, rect, self.corner_radius);
+		
+		text_drawer.draw(canvas,
+		                 &Text::new(self.value.to_string(), 20.0),
+		                 rect.center(),
+		                 None,
+		                 None,
+		                 HorizontalAlign::Left,
+		                 VerticalAlign::Top, );
 	}
 }
