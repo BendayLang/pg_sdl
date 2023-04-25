@@ -5,7 +5,7 @@ use sdl2::{pixels::Color, render::Canvas, video::Window};
 use crate::text::TextDrawer;
 
 impl TextDrawer {
-    pub fn draw(
+    pub fn q_draw(
         &mut self,
         canvas: &mut Canvas<Window>,
         font_name: &str,

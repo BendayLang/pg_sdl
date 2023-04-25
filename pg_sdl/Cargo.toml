@@ -8,5 +8,8 @@ version = "0.35.2"
 
 [dependencies]
 fontdue-sdl2 = "0.3"
-fontdue = "0.7"
+fontdue = "0.7.3"
 macros = { path = "../macros" }
+
+itertools = "0.10.5"
+num = "0.4.0"

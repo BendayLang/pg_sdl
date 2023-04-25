@@ -1,15 +1,43 @@
+use sdl2::rect::Point;
+use crate::{Input, point};
+
 pub struct Camera {
-	screen_size: Point, // resolution of the screen
+	resolution: Point,
 	pub position: Point,
-	pub zoom: f32, // scale of the camera
+	pub scale: f32,
 }
 
 impl Camera {
-	pub fn new(screen_size: Point) -> Self {
+	pub fn new(resolution: Point) -> Self {
 		Camera {
-			screen_size,
+			resolution,
 			position: Point::new(0, 0),
-			zoom: 1.0,
+			scale: 1.0,
 		}
+	}
+	
+	pub fn update(&mut self, input: &Input, delta: f32) -> bool {
+		let changed = false;
+		
+		changed
+	}
+	
+	fn resize(&mut self, new_size: Point) {
+		// self.move((self.resolution - new_size) / self.scale / 2);
+		self.resolution = new_size;
+	}
+	
+	fn screen2world(self, point: Point) -> Point {
+		// Renvoie la position d'un point à l'écran en position dans le monde.
+		point!(
+			point.x as f32 / self.scale + self.position.x as f32,
+			point.y as f32 / self.scale + self.position.y as f32)
+	}
+	
+	fn world2screen(self, point: Point) -> Point {
+		// Renvoie la position d'un point dans le monde en position à l'écran.
+		point!(
+			(point.x - self.position.x) as f32 * self.scale,
+			(point.y - self.position.y) as f32 * self.scale)
 	}
 }
