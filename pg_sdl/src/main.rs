@@ -16,7 +16,7 @@ use crate::blocs::Bloc;
 use crate::canvas::{fill_rect};
 use crate::color::{hsv_color, darker, paler, Colors};
 use crate::draw_circle::{draw_circle, fill_circle};
-use crate::widgets::{Button, Orientation, Slider};
+use crate::widgets::{Button, Orientation, Slider, SliderType};
 use crate::text::{Text, TextDrawer};
 use crate::widgets::Widget;
 
@@ -35,7 +35,7 @@ mod blocs;
 
 pub struct MyApp {
 	buttons: Vec<Button>,
-	sliders: Vec<Slider>,
+	sliders: Vec<Slider<i32>>,
 	blocs: HashMap<u32, Bloc>,
 	text: String,
 }
@@ -60,17 +60,17 @@ fn main() {
 				Colors::GREEN,
 				rect!(500, 150, 180, 18),
 				Some(4),
-				[-10, 8],
-				Some(2),
-				0,
+				SliderType::Discret { snap: 10, default_value: 5},
+				Box::new(|value| (value * 10.0) as i32),
+				Some(Box::new(|value| format!("{}", (value - 5) * 2))),
 			),
 			Slider::new(
 				Colors::ORANGE,
 				rect!(700, 80, 30, 150),
 				Some(14),
-				[0, 2],
-				None,
-				1,
+				SliderType::Continuous {default_value: 0.2},
+				Box::new(|value: f32| (value * 100.0) as i32),
+				Some(Box::new(|value| format!("{}%", value))),
 			)],
 		blocs: HashMap::from([(0, Bloc::new(
 			Colors::MAGENTA, rect!(120, 230, 110, 80),
@@ -92,7 +92,7 @@ fn main() {
 		}
 		
 		if app.buttons[0].state.is_pressed() {
-			app.sliders[0].value = app.sliders[0].span[0];
+			println!("{}", app.sliders[0].get_value());
 		}
 		
 		if let Some(last_char) = input.last_char {

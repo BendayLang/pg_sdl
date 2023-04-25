@@ -31,15 +31,10 @@ impl Colors {
 	pub const ROYAL_BLUE: Color = Color::RGB(65, 105, 225);
 }
 
-
+/// - hue (0-360)
+/// - saturation (0.0 - 1.0)
+/// - value (0.0 - 1.0)
 pub fn hsv_color(hue: u16, saturation: f32, value: f32) -> Color {
-	/*
-	/// hue (0-360)
-	///
-	/// saturation (0.0 - 1.0)
-	///
-	/// value (0.0 - 1.0)
-	 */
 	let c: f32 = saturation * value;
 	let x: f32 = c * (1.0 - ((hue as f32 / 60.0) % 2.0 - 1.0).abs());
 	let m: f32 = value - c;

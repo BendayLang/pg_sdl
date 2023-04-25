@@ -37,7 +37,8 @@ pub struct Button {
 }
 
 impl Button {
-	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>, text: Option<Text>) -> Self {
+	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>,
+	           text: Option<Text>) -> Self {
 		Self {
 			color,
 			hovered_color: darker(color, HOVER),
@@ -102,13 +103,13 @@ impl Widget for Button {
 // #[derive(PartialEq)]
 pub enum Orientation { Horizontal, Vertical }
 
-pub enum SliderType { Discret, Continuous }
+pub enum SliderType { Discret { snap: u8, default_value: u8 }, Continuous { default_value: f32 } }
 
 /// A slider is a widget that can be dragged to change a value.
-pub struct Slider {
+pub struct Slider<R: ?Sized> {
 	color: Color,
-	back_color: Color,
 	hovered_color: Color,
+	back_color: Color,
 	hovered_back_color: Color,
 	thumb_color: Color,
 	hovered_thumb_color: Color,
@@ -118,20 +119,17 @@ pub struct Slider {
 	corner_radius: Option<u32>,
 	hovered: bool,
 	pub state: KeyState,
-	pub min: i32,
-	pub max: i32,
+	/// (0.0 - 1.0)
+	value: f32,
 	slider_type: SliderType,
-	pub value: i32,
-	raw_value: f32,
+	value_getter_function: Box<dyn Fn(f32) -> R>,
+	draw_value: Option<Box<dyn Fn(&R) -> String>>,
 }
 
-impl Slider {
-	/// Create a new slider.
-	/// - **min / max** is the range of values the slider can take.
-	/// - **slider type** discrete or continuous.
-	/// - **value** is the initial value of the slider.
+impl<R> Slider<R> {
 	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>,
-	           span: [i32; 2], slider_type: SliderType, value: i32) -> Self {
+	           slider_type: SliderType, value_getter_function: Box<dyn Fn(f32) -> R>,
+	           draw_value: Option<Box<dyn Fn(&R) -> String>>) -> Self {
 		let orientation = {
 			if rect.width() > rect.height() { Orientation::Horizontal } else { Orientation::Vertical }
 		};
@@ -139,8 +137,8 @@ impl Slider {
 		let back_color = darker(paler(color, 0.5), 0.9);
 		Self {
 			color,
-			back_color,
 			hovered_color: darker(color, HOVER),
+			back_color,
 			hovered_back_color: darker(back_color, HOVER),
 			thumb_color,
 			hovered_thumb_color: darker(thumb_color, HOVER),
@@ -150,24 +148,19 @@ impl Slider {
 			corner_radius,
 			hovered: false,
 			state: KeyState::new(),
-			min: 0,
-			max: 0,
+			value: match slider_type {
+				SliderType::Discret { snap, default_value } => default_value as f32 / snap as f32,
+				SliderType::Continuous { default_value } => default_value,
+			},
 			slider_type,
-			value,
-			raw_value: 0.0,
+			value_getter_function,
+			draw_value,
 		}
 	}
 	
-	fn get_value(&self) -> i32 {
-		let value = self.span[0] as f32 + self.raw_value * (self.span[1] - self.span[0]) as f32;
-		if let Some(snap) = self.snap {
-			(value / snap as f32).round() as i32 * snap as i32
-		} else {
-			value.round() as i32
-		}
-	}
+	pub fn get_value(&self) -> R { (self.value_getter_function)(self.value) }
 	
-	fn thumb_position(&self) -> u32 { (self.raw_value * self.length() as f32) as u32 }
+	fn thumb_position(&self) -> u32 { (self.value * self.length() as f32) as u32 }
 	
 	fn length(&self) -> u32 {
 		match self.orientation {
@@ -184,7 +177,7 @@ impl Slider {
 	}
 }
 
-impl Widget for Slider {
+impl<R> Widget for Slider<R> {
 	fn update(&mut self, input: &Input, delta: f32) -> bool {
 		let mut changed = false;
 		self.state.update();
@@ -204,7 +197,7 @@ impl Widget for Slider {
 		}
 		
 		if self.state.is_pressed() | self.state.is_down() {
-			let raw_value = {
+			let value = {
 				let point = input.mouse.position;
 				let thumb_position = match self.orientation {
 					Orientation::Horizontal => point.x() - self.rect.left(),
@@ -213,14 +206,14 @@ impl Widget for Slider {
 				thumb_position.clamp(0, self.length() as i32) as f32 / self.length() as f32
 			};
 			
-			if raw_value != self.raw_value {
-				self.raw_value = raw_value;
+			let value = match self.slider_type {
+				SliderType::Discret { snap, .. } => (value * snap as f32).round() / snap as f32,
+				SliderType::Continuous { .. } => value,
+			};
+			
+			if value != self.value {
+				self.value = value;
 				changed = true;
-				
-				let value = self.get_value();
-				if value != self.value {
-					self.value = value;
-				}
 			}
 		}
 		
@@ -289,12 +282,16 @@ impl Widget for Slider {
 		};
 		fill_rect(canvas, rect, self.corner_radius);
 		
-		text_drawer.draw(canvas,
-		                 &Text::new(self.value.to_string(), 20.0),
-		                 rect.center(),
-		                 None,
-		                 None,
-		                 HorizontalAlign::Left,
-		                 VerticalAlign::Top, );
+		if let Some(draw_value) = &self.draw_value {
+			let text = (*draw_value)(&self.get_value());
+			text_drawer.draw(canvas,
+			                 &Text::new(text, 20.0),
+			                 rect.center(),
+			                 None,
+			                 None,
+			                 HorizontalAlign::Left,
+			                 VerticalAlign::Top,
+			);
+		}
 	}
 }
