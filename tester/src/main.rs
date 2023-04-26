@@ -37,41 +37,32 @@ fn get_centered_rect(rect_width: u32, rect_height: u32, cons_width: u32, cons_he
     rect!(cx, cy, w, h)
 }
 
-fn run(font_path: &Path) -> Result<(), String> {
-    let sdl_context = sdl2::init()?;
-    let video_subsys = sdl_context.video()?;
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
-
-    let window = video_subsys
-        .window("SDL2_TTF Example", SCREEN_WIDTH, SCREEN_HEIGHT)
-        .position_centered()
-        .opengl()
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-    let texture_creator = canvas.texture_creator();
-
-    // Load a font
-    let mut font = ttf_context.load_font(font_path, 128)?;
-    font.set_style(sdl2::ttf::FontStyle::BOLD);
+fn draw_text(
+    canvas: &mut Canvas<Window>,
+    font: &mut sdl2::ttf::Font,
+    ttf_context: &sdl2::ttf::Sdl2TtfContext,
+    texture_creator: &sdl2::render::TextureCreator<sdl2::video::WindowContext>,
+    font_size: Option<&sdl2::ttf::FontStyle>,
+) {
+    if let Some(font_size) = font_size {
+        font.set_style(*font_size);
+    }
 
     // render a surface, and convert it to a texture bound to the canvas
     let surface = font
         .render("Hello Rust!")
         .blended(Color::RGBA(255, 0, 0, 255))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+        .unwrap();
     let texture = texture_creator
         .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
-
-    canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
-    canvas.clear();
+        .map_err(|e| e.to_string())
+        .unwrap();
 
     let TextureQuery { width, height, .. } = texture.query();
 
     // If the example text is too big for the screen, downscale it (and center irregardless)
-    let padding = 64;
+    let padding = 0;
     let target = get_centered_rect(
         width,
         height,
@@ -79,30 +70,8 @@ fn run(font_path: &Path) -> Result<(), String> {
         SCREEN_HEIGHT - padding,
     );
 
-    canvas.copy(&texture, None, Some(target))?;
-    canvas.present();
-
-    'mainloop: loop {
-        for event in sdl_context.event_pump()?.poll_iter() {
-            match event {
-                Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                }
-                | Event::Quit { .. } => break 'mainloop,
-                _ => {}
-            }
-        }
-    }
-
-    Ok(())
+    canvas.copy(&texture, None, Some(target)).unwrap();
 }
-
-fn main() {
-    run(Path::new("/usr/share/fonts/TTF/VeraIt.ttf")).unwrap();
-}
-
-/*
 
 pub struct MyApp {
     buttons: Vec<Button>,
@@ -148,6 +117,17 @@ impl UserApp for MyApp {
     }
 
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
+        {
+            // Tout ce qui pourrais être fait dans le constructeur (1 seule fois)
+            let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
+            let texture_creator = canvas.texture_creator();
+            let mut font = ttf_context
+                .load_font(Path::new("/usr/share/fonts/TTF/Vera.ttf"), 28)
+                .unwrap();
+            // La fn draw_text
+            draw_text(canvas, &mut font, &ttf_context, &texture_creator, None);
+        }
+
         let widgets = self
             .buttons
             .iter_mut()
@@ -244,4 +224,3 @@ fn main() {
 
     app.run(&mut my_app);
 }
-*/
