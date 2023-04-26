@@ -80,12 +80,9 @@ pub struct MyApp {
     text: String,
 }
 
-impl UserApp for MyApp {
-    fn update(&mut self, delta: f32, input: &Input) -> bool {
-        let mut changed = false;
-
-        let widgets: Vec<&mut dyn Widget> = self
-            .buttons
+impl MyApp {
+    fn widgets(&mut self) -> Vec<&mut dyn Widget> {
+        self.buttons
             .iter_mut()
             .map(|button| button as &mut dyn Widget)
             .chain(
@@ -93,11 +90,16 @@ impl UserApp for MyApp {
                     .iter_mut()
                     .map(|slider| slider as &mut dyn Widget),
             )
-            .collect();
+            .collect()
+    }
+}
 
-        for widget in widgets {
-            changed |= widget.update(&input, delta);
-        }
+impl UserApp for MyApp {
+    fn update(&mut self, delta: f32, input: &Input) -> bool {
+        let mut changed = self
+            .widgets()
+            .iter_mut()
+            .any(|widget| widget.update(&input, delta));
 
         if self.buttons[0].state.is_pressed() {
             println!("{}", self.sliders[0].get_value());
