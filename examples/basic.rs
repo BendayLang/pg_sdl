@@ -1,4 +1,6 @@
 #![allow(dead_code, unused_imports, unused_variables)]
+
+extern crate pg_sdl;
 use pg_sdl::prelude::*;
 use std::collections::HashMap;
 
