@@ -42,12 +42,11 @@ fn get_centered_rect(rect_width: u32, rect_height: u32, cons_width: u32, cons_he
 fn draw_text(
     canvas: &mut Canvas<Window>,
     font: &mut sdl2::ttf::Font,
-    ttf_context: &sdl2::ttf::Sdl2TtfContext,
     texture_creator: &sdl2::render::TextureCreator<sdl2::video::WindowContext>,
-    font_size: Option<&sdl2::ttf::FontStyle>,
+    font_style: Option<&sdl2::ttf::FontStyle>,
 ) {
-    if let Some(font_size) = font_size {
-        font.set_style(*font_size);
+    if let Some(font_style) = font_style {
+        font.set_style(*font_style);
     }
 
     // render a surface, and convert it to a texture bound to the canvas
@@ -121,16 +120,14 @@ impl UserApp for MyApp {
     }
 
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        {
-            // Tout ce qui pourrais être fait dans le constructeur (1 seule fois)
-            let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
-            let texture_creator = canvas.texture_creator();
-            let mut font = ttf_context
-                .load_font(Path::new("/usr/share/fonts/TTF/Vera.ttf"), 28)
-                .unwrap();
-            // La fn draw_text
-            draw_text(canvas, &mut font, &ttf_context, &texture_creator, None);
-        }
+        // Tout ce qui pourrais être fait dans le constructeur (1 seule fois)
+        let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
+        let texture_creator = canvas.texture_creator();
+        let mut font = ttf_context
+            .load_font(Path::new("/usr/share/fonts/TTF/Vera.ttf"), 28)
+            .unwrap();
+        // La fn draw_text
+        draw_text(canvas, &mut font, &texture_creator, None);
 
         let widgets = self
             .buttons
