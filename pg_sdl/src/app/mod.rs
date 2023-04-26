@@ -2,8 +2,7 @@ use std::time::Instant;
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 
 use sdl2::{render::Canvas, video::Window, pixels::Color};
-use sdl2::render::WindowCanvas;
-use crate::{Input, MyApp, point, rect, text};
+use crate::{Input, MyApp, point, rect};
 use crate::canvas::{fill_background};
 
 use crate::text::{Text, TextDrawer};
@@ -77,7 +76,7 @@ impl App {
 			
 			// Update
 			// Draw
-			if (self.update)(my_app, frame_time, &self.input){
+			if (self.update)(my_app, frame_time, &self.input) || true {
 				fill_background(&mut self.canvas, self.background_color);
 				(self.draw)(my_app, &mut self.canvas, &mut self.text_drawer);
 			}
@@ -88,11 +87,7 @@ impl App {
 				self.canvas.fill_rect(rect!(10.0, 1.0, 120.0, 32.0)).unwrap();
 				self.text_drawer.draw(
 					&mut self.canvas,
-					&Text {
-						text: format!("FPS: {0:.0}", 1.0 / frame_time),
-						font_size: 30.0,
-						..Default::default()
-					},
+					&Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 30.0),
 					point!(10.0, 1.0),
 					None,
 					None,

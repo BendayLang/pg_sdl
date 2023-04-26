@@ -103,14 +103,12 @@ pub fn paler(color: Color, saturation_change: f32) -> Color {
 	if c_max == 0.0 { return Color::BLACK; }
 	let c_min = min([r, g, b]).unwrap() as f32 / 255.0;
 	
-	let delta = c_max - c_min;
-	
-	let saturation = delta / c_max;
+	let saturation = c_max * (1.0 - saturation_change);
 	
 	let color = Color::RGB(
-		r + (((c_max - r as f32 / 255.0) * c_max * (1.0 - saturation_change)) * 255.0) as u8,
-		g + (((c_max - g as f32 / 255.0) * c_max * (1.0 - saturation_change)) * 255.0) as u8,
-		b + (((c_max - b as f32 / 255.0) * c_max * (1.0 - saturation_change)) * 255.0) as u8,
+		r + ((c_max - r as f32 / 255.0) * saturation * 255.0) as u8,
+		g + ((c_max - g as f32 / 255.0) * saturation * 255.0) as u8,
+		b + ((c_max - b as f32 / 255.0) * saturation * 255.0) as u8,
 	);
 	
 	color

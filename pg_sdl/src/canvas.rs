@@ -1,5 +1,4 @@
-use std::fmt::format;
-use crate::{Colors, draw_circle, point, rect};
+use crate::{point, rect};
 use sdl2::{pixels::Color, rect::Rect, render::Canvas, video::Window};
 
 pub fn fill_background(canvas: &mut Canvas<Window>, color: Color) {

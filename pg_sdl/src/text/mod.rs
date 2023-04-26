@@ -6,7 +6,6 @@ mod text;
 use fontdue;
 use fontdue::layout::{CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign};
 use fontdue_sdl2::FontTexture;
-use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
@@ -48,9 +47,9 @@ impl TextDrawer {
         let mut font_texture = FontTexture::new(&self.texture_creator).unwrap();
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
         
-        if width == None{
-            let width = text.text.len() as f32 * text.font_size;
-        }
+        let width = Some(if width == None{
+            text.text.len() as f32 * text.font_size
+        } else { width.unwrap() });
         layout.reset(&LayoutSettings {
             x: position.x as f32,
             y: position.y as f32,

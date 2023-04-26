@@ -16,7 +16,7 @@ impl Camera {
 		}
 	}
 	
-	pub fn update(&mut self, input: &Input, delta: f32) -> bool {
+	pub fn update(&mut self, input: &Input) -> bool {
 		let changed = false;
 		
 		changed
