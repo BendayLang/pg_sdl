@@ -100,7 +100,7 @@ fn draw(app: &mut MyApp, canvas: &mut Canvas<Window>, text_drawer: &mut TextDraw
 }
 
 fn main() {
-    let my_app = &mut MyApp {
+    let mut my_app = MyApp {
         buttons: vec![
             Button::new(
                 Colors::ROYAL_BLUE,
@@ -149,5 +149,5 @@ fn main() {
         draw,
     );
 
-    app.run(my_app);
+    app.run(&mut my_app);
 }
