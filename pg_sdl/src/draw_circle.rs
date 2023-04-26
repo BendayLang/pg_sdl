@@ -1,5 +1,4 @@
 use crate::point;
-use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;

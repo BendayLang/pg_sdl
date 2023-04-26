@@ -6,7 +6,6 @@ mod text;
 use fontdue;
 use fontdue::layout::{CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign};
 use fontdue_sdl2::FontTexture;
-use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;

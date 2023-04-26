@@ -1,6 +1,4 @@
 use sdl2::pixels::Color;
-use sdl2::rect::Point;
-use crate::point;
 
 pub struct Text{
     pub text: String,
