@@ -3,17 +3,11 @@ name = "pg_sdl"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-lib-name = "pg_sdl"
-
-[dependencies.sdl2]
-version = "0.35.2"
-
 [dependencies]
+sdl2 = { version = "0.35.2", features = ["ttf"] }
 fontdue-sdl2 = "0.3"
 fontdue = "0.7.3"
 macros = { path = "../macros" }
-
 
 itertools = "0.10.5"
 num = "0.4.0"

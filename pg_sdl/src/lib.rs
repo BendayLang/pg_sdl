@@ -1,8 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
-// use color::paler;
-// use input::Input;
-
 pub mod app;
 pub mod blocs;
 pub mod camera;

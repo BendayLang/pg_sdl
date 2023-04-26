@@ -1,27 +1,25 @@
 use crate::canvas::fill_background;
 use crate::text::{Text, TextDrawer};
-use crate::{point, rect, input::Input};
+use crate::{input::Input, point, rect};
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use std::time::Instant;
 
-pub trait UserApp {}
+pub trait UserApp {
+    fn update(&mut self, delta: f32, input: &Input) -> bool;
+    fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
+}
 
-pub type UpdateFn<U> = fn(&mut U, f32, &Input) -> bool;
-pub type DrawFn<U> = fn(&mut U, &mut Canvas<Window>, &mut TextDrawer);
-
-pub struct App<U> {
+pub struct App {
     pub input: Input,
     pub canvas: Canvas<Window>,
     pub text_drawer: TextDrawer,
     pub background_color: Color,
     fps: Option<f32>,
     draw_fps: bool,
-    update: UpdateFn<U>,
-    draw: DrawFn<U>,
 }
 
-impl<U> App<U> {
+impl App {
     pub fn init(
         window_title: &str,
         window_width: u32,
@@ -29,8 +27,6 @@ impl<U> App<U> {
         fps: Option<f32>,
         draw_fps: bool,
         background_color: Color,
-        update: UpdateFn<U>,
-        draw: DrawFn<U>,
     ) -> Self {
         let sdl_context = sdl2::init().unwrap();
 
@@ -54,17 +50,19 @@ impl<U> App<U> {
             background_color,
             fps,
             draw_fps,
-            update,
-            draw,
         }
     }
 
-    pub fn run(&mut self, user_app: &mut U) {
+    pub fn run<U>(&mut self, user_app: &mut U)
+    where
+        U: UserApp,
+    {
         let mut frame_instant: Instant;
         let mut frame_time: f32 = 0.02;
 
+        self.input.get_events(); // permet au draw de savoir ou placer les widgets la première fois
         fill_background(&mut self.canvas, self.background_color);
-        (self.draw)(user_app, &mut self.canvas, &mut self.text_drawer);
+        user_app.draw(&mut self.canvas, &mut self.text_drawer);
 
         'running: loop {
             // Time control
@@ -77,9 +75,9 @@ impl<U> App<U> {
 
             // Update
             // Draw
-            if (self.update)(user_app, frame_time, &self.input) {
+            if user_app.update(frame_time, &self.input) {
                 fill_background(&mut self.canvas, self.background_color);
-                (self.draw)(user_app, &mut self.canvas, &mut self.text_drawer);
+                user_app.draw(&mut self.canvas, &mut self.text_drawer);
             }
 
             // FPS
