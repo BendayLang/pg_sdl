@@ -104,7 +104,7 @@ impl UserApp for MyApp {
             .any(|widget| widget.update(&input, delta));
 
         if self.buttons[0].state.is_pressed() {
-            println!("{}", self.sliders[0].get_value());
+            // println!("{}", self.sliders[0].get_value());
         }
 
         if let Some(last_char) = input.last_char {
@@ -192,34 +192,32 @@ fn main() {
                 Colors::ROYAL_BLUE,
                 rect!(100, 100, 200, 100),
                 Some(9),
-                Some(Text {
-                    text: "Réponse à Loïc".to_string(),
-                    ..Default::default()
-                }),
+                Some(Text::new("Hello World !".to_string(), 16.0)),
             ),
             Button::new(Colors::GREY, rect!(550, 20, 80, 50), Some(7), None),
         ],
-        sliders: vec![
-            Slider::new(
-                Colors::GREEN,
-                rect!(500, 150, 180, 18),
-                Some(4),
-                SliderType::Discret {
-                    snap: 10,
-                    default_value: 5,
-                },
-                Box::new(|value| (value * 10.0) as i32),
-                Some(Box::new(|value| format!("{}", (value - 5) * 2))),
-            ),
-            Slider::new(
-                Colors::ORANGE,
-                rect!(700, 80, 30, 150),
-                Some(14),
-                SliderType::Continuous { default_value: 0.2 },
-                Box::new(|value: f32| (value * 100.0) as i32),
-                Some(Box::new(|value| format!("{}%", value))),
-            ),
-        ],
+        sliders: vec![],
+        // sliders: vec![
+        //     Slider::new(
+        //         Colors::GREEN,
+        //         rect!(500, 150, 180, 18),
+        //         Some(4),
+        //         SliderType::Discret {
+        //             snap: 10,
+        //             default_value: 5,
+        //         },
+        //         Box::new(|value| (value * 10.0) as i32),
+        //         Some(Box::new(|value| format!("{}", (value - 5) * 2))),
+        //     ),
+        //     Slider::new(
+        //         Colors::ORANGE,
+        //         rect!(700, 80, 30, 150),
+        //         Some(14),
+        //         SliderType::Continuous { default_value: 0.2 },
+        //         Box::new(|value: f32| (value * 100.0) as i32),
+        //         Some(Box::new(|value| format!("{}%", value))),
+        //     ),
+        // ],
         blocs: HashMap::from([(0, Bloc::new(Colors::MAGENTA, rect!(120, 230, 110, 80)))]),
         text: String::new(),
     };

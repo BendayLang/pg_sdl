@@ -12,6 +12,7 @@ pub mod utils;
 pub mod widgets;
 
 pub mod prelude {
+    pub use fontdue::layout::{HorizontalAlign, VerticalAlign};
     pub use crate::app::{App, UserApp};
     pub use crate::blocs::Bloc;
     pub use crate::camera::Camera;
