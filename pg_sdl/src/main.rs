@@ -9,7 +9,7 @@ use sdl2::video::Window;
 
 use app::App;
 use input::Input;
-use crate::blocs::Bloc;
+use crate::blocs::{Bloc, draw_bloc, set_child};
 use crate::canvas::{fill_rect};
 use crate::color::{darker, paler, Colors, hsv_color};
 use crate::draw_circle::{draw_circle};
@@ -43,7 +43,6 @@ pub struct MyApp {
 	id_counter: u32,
 	bloc_state: AppState,
 	blocs: HashMap<u32, Bloc>,
-	text: String,
 }
 
 
@@ -92,7 +91,6 @@ fn main() {
 		id_counter: 0,
 		bloc_state: AppState::Idle,
 		blocs: HashMap::new(),
-		text: String::new(),
 	};
 	
 	fn update(app: &mut MyApp, delta: f32, input: &Input) -> bool {
@@ -140,13 +138,20 @@ fn main() {
 				
 				if input.mouse.left_button.is_released() {
 					let moving_bloc = app.blocs.get(&moving_bloc_id).unwrap();
-					let mut id_bloc: Option<(&u32, &mut Bloc)> =
-						app.blocs.iter_mut().find(|(_id, bloc)| moving_bloc.collide_bloc(bloc));
+					let maybe_parent_bloc: Option<&Bloc> =
+						app.blocs.values().into_iter().find(|bloc| moving_bloc.collide_bloc(bloc));
 					
-					// id_bloc.unwrap().1.set_child(moving_bloc_id);
-					if let Some((id, parent_bloc)) = id_bloc {
-						// let parent_bloc = app.blocs.get_mut(&id).unwrap();
-						parent_bloc.set_child(moving_bloc_id);
+					let collide_with: Option<u32> = {
+						let mut temp = None;
+						for (id, bloc) in &app.blocs {
+							if id == &moving_bloc_id { continue; }
+							if moving_bloc.collide_bloc(bloc) { temp = Some(id); }
+						}
+						temp
+					}.copied();
+					
+					if let Some(parent_id) = collide_with {
+						set_child(moving_bloc_id, parent_id, &mut app.blocs);
 					}
 					
 					changed = true;
@@ -181,13 +186,16 @@ fn main() {
 		canvas.draw_rects(&rects).unwrap();
 		
 		for (_id, bloc) in &app.blocs {
-			bloc.draw(canvas, text_drawer);
+			if bloc.parent != None { continue; }
+			draw_bloc(bloc, &app.blocs, canvas, text_drawer);
 		}
 		
-		let text = app.text.clone();
+		// text of blocs
+		let text = format!("{}", app.blocs.iter()
+		                            .map(|(id, bloc)| format!(" {}: {} ", id, bloc)).join("\n"));
 		text_drawer.draw(canvas,
-		                 &Text::new(text, 20.0),
-		                 point!(130.0, 250.0),
+		                 &Text::new(text, 12.0),
+		                 point!(130.0, 550.0),
 		                 None,
 		                 None,
 		                 HorizontalAlign::Left,

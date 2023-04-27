@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::fmt::Display;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
@@ -6,13 +8,22 @@ use crate::{fill_rect, TextDrawer};
 use crate::canvas::draw_rect;
 
 /// A bloc represents a piece of code that can be executed.
+///
+/// If the bloc has a parent, the rect position is relative to the parent.
 pub struct Bloc {
 	color: Color,
-	/// If the bloc has a parent, the rect position is relative to the parent.
 	rect: Rect,
 	corner_radius: Option<u32>,
-	parent: Option<u32>,
-	child: Option<u32>,
+	pub parent: Option<u32>,
+	pub child: Option<u32>,
+}
+
+impl Display for Bloc {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let parent = if let Some(parent) = self.parent { format!("{}", parent) } else { "N".to_string() };
+		let child = if let Some(child) = self.child { format!("{}", child) } else { "N".to_string() };
+		write!(f, "Bloc( parent:{} child:{} )", parent, child)
+	}
 }
 
 impl Bloc {
@@ -33,21 +44,46 @@ impl Bloc {
 		draw_rect(canvas, self.rect);
 	}
 	
+	pub fn get_size(&self) -> (u32, u32) { self.rect.size() }
+	
+	pub fn set_size(&mut self, size: (u32, u32)) { self.rect.resize(size.0, size.1); }
+	
 	pub fn move_by(&mut self, point: Point) { self.rect.reposition(self.rect.top_left() + point); }
+	
+	pub fn set_position(&mut self, position: (i32, i32)) { self.rect.reposition(position); }
 	
 	pub fn collide(&self, point: Point) -> bool { self.rect.contains_point(point) }
 	
 	pub fn collide_bloc(&self, bloc: &Bloc) -> bool { self.rect.has_intersection(bloc.rect) }
+}
+
+pub fn draw_bloc(bloc: &Bloc, blocs: &HashMap<u32, Bloc>, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
+	bloc.draw(canvas, text_drawer);
+	if let Some(child_id) = bloc.child {
+		let bloc = blocs.get(&child_id).unwrap();
+		draw_bloc(bloc, blocs, canvas, text_drawer);
+	}
+}
+
+
+pub fn set_child(child_id: u32, parent_id: u32, blocs: &mut HashMap<u32, Bloc>) {
+	let child_size = blocs.get(&child_id).unwrap().get_size();
+	let (child_width, child_height) = child_size;
+	{
+		let parent_bloc = blocs.get_mut(&parent_id).unwrap();
+		parent_bloc.child = Some(child_id);
+		
+		parent_bloc.set_size((parent_bloc.rect.width() + child_width,
+		                      parent_bloc.rect.height() + child_height));
+	}
 	
-	pub fn get_parent(&self) -> Option<u32> { self.parent }
-	
-	pub fn set_parent(&mut self, parent: u32) { self.parent = Some(parent); }
-	
-	pub fn get_child(&self) -> Option<u32> { self.child }
-	
-	pub fn set_child(&mut self, child_id: u32) {
-		self.child = Some(child_id);
-		// self.rect.set_width(self.rect.width() + child.rect.width());
-		// self.rect.set_height(self.rect.height() + child.rect.height());
+	let parent_size = blocs.get(&parent_id).unwrap().get_size();
+	let (parent_width, parent_height) = parent_size;
+	{
+		let child_bloc = blocs.get_mut(&child_id).unwrap();
+		child_bloc.parent = Some(parent_id);
+		
+		child_bloc.set_position((parent_width as i32 - child_width as i32,
+		                         parent_height as i32 - child_height as i32));
 	}
 }

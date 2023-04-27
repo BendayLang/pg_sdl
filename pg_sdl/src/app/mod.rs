@@ -46,7 +46,7 @@ impl App {
 			.build()
 			.expect("Window could not be created");
 		
-		let canvas = window.into_canvas().build().unwrap();
+		let canvas = window.into_canvas().present_vsync().build().unwrap();
 		
 		App {
 			text_drawer: TextDrawer::new(canvas.texture_creator()),
