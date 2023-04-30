@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -12,20 +11,21 @@ pub enum Orientation { Horizontal, Vertical }
 
 /// A slider can be:
 ///
-/// **discrete** with a number of **snap** points or **continuous**
+/// **discrete** (with a number of **snap** points) or **continuous**
+/// , It has:
 ///
-/// It has:
-/// - a **default value**
-/// - a **value getter function** which is applied to the value of the slider when you call **get_value()**
-pub enum SliderType<R: ?Sized + Display> {
-	Discrete { snap: u32, default_value: u32, value_getter_function: Box<dyn Fn(u32) -> Box<R>> },
-	Continuous { default_value: f32, value_getter_function: Box<dyn Fn(f32) -> Box<R>> }
+/// a **default value**
+///
+/// a **display** function that says if and how the value should be displayed
+pub enum SliderType {
+	Discrete { snap: u32, default_value: u32, display: Option<Box<dyn Fn(u32) -> String>> },
+	Continuous { default_value: f32, display: Option<Box<dyn Fn(f32) -> String>> }
 }
 
 /// A slider is a widget that can be dragged to change a value.
 ///
 /// It can be discrete or continuous
-pub struct Slider<R: ?Sized + Display> {
+pub struct Slider {
 	color: Color,
 	hovered_color: Color,
 	back_color: Color,
@@ -35,18 +35,18 @@ pub struct Slider<R: ?Sized + Display> {
 	pushed_thumb_color: Color,
 	rect: Rect,
 	orientation: Orientation,
+	/// Corner radius of the slider in proportion to it's width (0-0 - 1.0)
 	corner_radius: Option<u32>,
 	hovered: bool,
 	pub state: KeyState,
-	/// private value of the slider (0.0 - 1.0)
+	/// Internal value of the slider (0.0 - 1.0)
 	value: f32,
-	slider_type: SliderType<R>,
-	draw_value: bool,
+	slider_type: SliderType,
 }
 
-impl<R: ?Sized + Display> Slider<R> {
+impl Slider {
 	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>,
-	           slider_type: SliderType<R>, draw_value: bool) -> Self {
+	           slider_type: SliderType) -> Self {
 		let orientation = {
 			if rect.width() > rect.height() { Orientation::Horizontal } else { Orientation::Vertical }
 		};
@@ -70,18 +70,14 @@ impl<R: ?Sized + Display> Slider<R> {
 				SliderType::Continuous { default_value, .. } => default_value,
 			},
 			slider_type,
-			draw_value,
 		}
 	}
 	
-	pub fn get_value(&self) -> Box<R> {
+	/// Renvoie la valeur du slider comme un u32 si le slider est discret, sinon comme un f32
+	pub fn get_value(&self) -> f32 {
 		match &self.slider_type {
-			SliderType::Discrete { snap, value_getter_function, .. } => {
-				let value = (self.value * *snap as f32).round() as u32;
-				value_getter_function(value)
-			},
-			SliderType::Continuous { value_getter_function, .. } =>
-				value_getter_function(self.value),
+			SliderType::Discrete { snap, .. } => (self.value * *snap as f32).round(),
+			SliderType::Continuous { .. } => self.value,
 		}
 	}
 	
@@ -109,7 +105,7 @@ impl<R: ?Sized + Display> Slider<R> {
 	}
 }
 
-impl<R: ?Sized + Display> Widget for Slider<R> {
+impl Widget for Slider {
 	fn update(&mut self, input: &Input, _delta: f32) -> bool {
 		let mut changed = false;
 		self.state.update();
@@ -214,16 +210,34 @@ impl<R: ?Sized + Display> Widget for Slider<R> {
 		};
 		fill_rect(canvas, rect, self.corner_radius);
 		
-		if self.draw_value {
-			let text = format!("{}", self.get_value());
-			text_drawer.draw(canvas,
-			                 &Text::new(text, 20.0),
-			                 rect.center(),
-			                 None,
-			                 None,
-			                 HorizontalAlign::Left,
-			                 VerticalAlign::Top,
-			);
+		match &self.slider_type {
+			SliderType::Discrete { snap, display, .. } => {
+				if let Some(format) = display {
+					let value = (self.value * *snap as f32).round() as u32;
+					let text = format(value);
+					text_drawer.draw(canvas,
+					                 &Text::new(text, 20.0),
+					                 rect.center(),
+					                 None,
+					                 None,
+					                 HorizontalAlign::Left,
+					                 VerticalAlign::Top,
+					);
+				}
+			},
+			SliderType::Continuous { display, .. } => {
+				if let Some(format) = display {
+					let text = format(self.value);
+					text_drawer.draw(canvas,
+					                 &Text::new(text, 20.0),
+					                 rect.center(),
+					                 None,
+					                 None,
+					                 HorizontalAlign::Left,
+					                 VerticalAlign::Top,
+					);
+				}
+			},
 		}
 	}
 }

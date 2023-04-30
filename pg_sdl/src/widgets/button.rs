@@ -1,11 +1,11 @@
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
+use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use crate::input::KeyState;
-use crate::{Colors, darker, fill_rect, Input, Text, TextDrawer, Widget};
-use crate::canvas::draw_rounded_rect;
+use crate::{Colors, darker, Input, Text, TextDrawer, Widget};
 use crate::widgets::{HOVER, PUSH};
 
 /// A button is a widget that it can be clicked.
@@ -59,20 +59,39 @@ impl Widget for Button {
 	}
 	
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-		canvas.set_draw_color(if self.state.is_pressed() | self.state.is_down() {
+		let color = if self.state.is_pressed() | self.state.is_down() {
 			self.pushed_color
 		} else if self.hovered {
 			self.hovered_color
 		} else {
 			self.color
-		});
-		fill_rect(canvas, self.rect, self.corner_radius);
-		canvas.set_draw_color(Colors::BLACK);
+		};
+		
 		if let Some(radius) = self.corner_radius {
-			draw_rounded_rect(canvas, self.rect, radius);
+			DrawRenderer::rounded_box(canvas,
+			                          self.rect.left() as i16, self.rect.top() as i16,
+			                          self.rect.right() as i16, self.rect.bottom() as i16,
+			                          radius as i16, color).expect("DrawRenderer failed");
+			DrawRenderer::rounded_rectangle(canvas,
+			                                self.rect.left() as i16, self.rect.top() as i16,
+			                                self.rect.right() as i16, self.rect.bottom() as i16,
+			                                radius as i16, Colors::BLACK).expect("DrawRenderer failed");
+		} else {
+			canvas.set_draw_color(color);
+			canvas.fill_rect(self.rect).unwrap();
+			canvas.set_draw_color(Colors::BLACK);
+			canvas.draw_rect(self.rect).unwrap();
 		}
 		
 		if let Some(text) = &self.text {
+			/*
+			text_drawer.q_draw(canvas,
+			                   "bob",
+			                   text.text.as_str(),
+			                   &LayoutSettings::default(),
+			                   Colors::BLACK,
+			                   20.0);
+			 */
 			text_drawer.draw(canvas,
 			                 text,
 			                 self.rect.top_left(),

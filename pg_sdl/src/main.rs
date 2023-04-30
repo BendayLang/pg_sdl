@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use itertools::Itertools;
-use sdl2::rect::{Rect};
+use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::render::{Canvas};
 use sdl2::video::Window;
 
@@ -12,7 +12,6 @@ use input::Input;
 use crate::blocs::{Bloc, draw_bloc, set_child};
 use crate::canvas::{fill_rect};
 use crate::color::{darker, paler, Colors, hsv_color};
-use crate::draw_circle::{draw_circle};
 use crate::text::{Text, TextDrawer};
 use crate::widgets::button::Button;
 use crate::widgets::slider::{Slider, SliderType};
@@ -39,7 +38,7 @@ enum AppState {
 
 pub struct MyApp {
 	buttons: Vec<Button>,
-	sliders: Vec<Slider<i32>>,
+	sliders: Vec<Slider>,
 	id_counter: u32,
 	bloc_state: AppState,
 	blocs: HashMap<u32, Bloc>,
@@ -57,7 +56,7 @@ fn main() {
 			Button::new(
 				Colors::GREY,
 				rect!(550, 20, 80, 50),
-				Some(7),
+				None,
 				None,
 			),
 			Button::new(
@@ -69,14 +68,13 @@ fn main() {
 		sliders: vec![
 			Slider::new(
 				Colors::GREEN,
-				rect!(500, 150, 180, 18),
+				rect!(500, 150, 150, 18),
 				Some(4),
 				SliderType::Discrete {
-					snap: 10,
-					default_value: 5,
-					value_getter_function: Box::new(|value| Box::new((value * 10) as i32))
+					snap: 6,
+					default_value: 3,
+					display: Some(Box::new(|value| format!("R{}", 2_u32.pow(value + 1)))),
 				},
-				true,
 			),
 			Slider::new(
 				Colors::ORANGE,
@@ -84,9 +82,8 @@ fn main() {
 				Some(20),
 				SliderType::Continuous {
 					default_value: 0.25,
-					value_getter_function: Box::new(|value| Box::new((value * 100.0 - 50.0).round() as i32))
+					display: Some(Box::new(|value| format!("{:.2}", value * 100.0 - 50.0))),
 				},
-				true,
 			)],
 		id_counter: 0,
 		bloc_state: AppState::Idle,
@@ -174,16 +171,9 @@ fn main() {
 			widget.draw(canvas, text_drawer);
 		}
 		
-		canvas.set_draw_color(Colors::VIOLET);
-		draw_circle(canvas, point!(500, 400), 100, 20);
-		
-		canvas.set_draw_color(Colors::RED_ORANGE);
-		let width: u32 = 20;
-		let rect = rect!(650, 350, 150, 100);
-		let rects = (0..width).map(|i| rect!(rect.x as u32 + i, rect.y as u32 + i,
-			rect.width() - 2 * i, rect.height() - 2 * i))
-		                      .collect::<Vec<Rect>>();
-		canvas.draw_rects(&rects).unwrap();
+		let radius = 2_u32.pow(app.sliders[0].get_value() as u32 + 1);
+		DrawRenderer::rounded_box(canvas, 100, 300, 420, 500, radius as i16, Colors::GREEN).expect("DrawRenderer failed");
+		DrawRenderer::rounded_rectangle(canvas, 100, 300, 420, 500, radius as i16, Colors::BLACK).expect("DrawRenderer failed");
 		
 		for (_id, bloc) in &app.blocs {
 			if bloc.parent != None { continue; }
