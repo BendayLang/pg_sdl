@@ -23,10 +23,10 @@ pg_sdl = { path = "pg_sdl", version = "0.1.0" }
 
 [[bin]]
 name = "pg_sdl2"
-path = "examples/basic2.rs"
+path = "examples/main.rs"
 
 [[example]]
 name = "basic"
 
 [[example]]
-name = "basic2"
+name = "main"

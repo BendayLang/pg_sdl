@@ -12,9 +12,8 @@ pub mod utils;
 pub mod widgets;
 
 pub mod prelude {
-    pub use fontdue::layout::{HorizontalAlign, VerticalAlign};
     pub use crate::app::{App, UserApp};
-    pub use crate::blocs::Bloc;
+    pub use crate::blocs::{draw_bloc, set_child, Bloc};
     pub use crate::camera::Camera;
     pub use crate::canvas::{fill_background, fill_rect};
     pub use crate::color::{darker, hsv_color, paler, Colors};
@@ -25,6 +24,7 @@ pub mod prelude {
     pub use crate::text::{Text, TextDrawer};
     pub use crate::widgets::Widget;
     pub use crate::widgets::{Button, Orientation, Slider, SliderType};
+    pub use fontdue::layout::{HorizontalAlign, VerticalAlign};
     pub use sdl2::{
         self,
         pixels::Color,
