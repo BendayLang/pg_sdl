@@ -1,5 +1,5 @@
 use sdl2::rect::Point;
-use crate::{Input, point};
+use crate::{input::Input, point};
 
 pub struct Camera {
 	resolution: Point,

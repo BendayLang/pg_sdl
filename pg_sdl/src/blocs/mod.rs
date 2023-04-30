@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::fmt::Display;
+use crate::canvas::draw_rect;
+use crate::canvas::fill_rect;
+use crate::text::TextDrawer;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use crate::{fill_rect, TextDrawer};
-use crate::canvas::draw_rect;
 
 /// A bloc represents a piece of code that can be executed.
 ///

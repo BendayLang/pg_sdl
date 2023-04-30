@@ -1,13 +1,17 @@
+use crate::input::KeyState;
+use crate::prelude::*;
+use crate::widgets::{HOVER, PUSH};
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use crate::input::KeyState;
-use crate::{Colors, darker, fill_rect, Input, paler, rect, Text, TextDrawer, Widget};
-use crate::widgets::{HOVER, PUSH};
+use std::fmt::Display;
 
-pub enum Orientation { Horizontal, Vertical }
+pub enum Orientation {
+    Horizontal,
+    Vertical,
+}
 
 /// A slider can be:
 ///

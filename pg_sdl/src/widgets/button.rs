@@ -1,39 +1,45 @@
+use crate::{
+    canvas::draw_rounded_rect,
+    canvas::fill_rect,
+    color::{darker, Colors},
+    input::{Input, KeyState},
+    text::Text,
+    text::TextDrawer,
+    widgets::Widget,
+    widgets::{HOVER, PUSH},
+};
 use fontdue::layout::{HorizontalAlign, VerticalAlign};
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use crate::input::KeyState;
-use crate::{Colors, darker, Input, Text, TextDrawer, Widget};
-use crate::widgets::{HOVER, PUSH};
 
 /// A button is a widget that it can be clicked.
 pub struct Button {
-	color: Color,
-	hovered_color: Color,
-	pushed_color: Color,
-	rect: Rect,
-	corner_radius: Option<u32>,
-	text: Option<Text>,
-	hovered: bool,
-	pub state: KeyState,
+    color: Color,
+    hovered_color: Color,
+    pushed_color: Color,
+    rect: Rect,
+    corner_radius: Option<u32>,
+    text: Option<Text>,
+    hovered: bool,
+    pub state: KeyState,
 }
 
 impl Button {
-	pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>,
-	           text: Option<Text>) -> Self {
-		Self {
-			color,
-			hovered_color: darker(color, HOVER),
-			pushed_color: darker(color, PUSH),
-			rect,
-			corner_radius,
-			text,
-			hovered: false,
-			state: KeyState::new(),
-		}
-	}
+    pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>, text: Option<Text>) -> Self {
+        Self {
+            color,
+            hovered_color: darker(color, HOVER),
+            pushed_color: darker(color, PUSH),
+            rect,
+            corner_radius,
+            text,
+            hovered: false,
+            state: KeyState::new(),
+        }
+    }
 }
 
 impl Widget for Button {
