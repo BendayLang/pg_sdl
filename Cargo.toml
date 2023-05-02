@@ -1,6 +1,7 @@
 [package]
-name = "pg_sdl2"
-license = "MIT" # TODO: change to ?
+name = "pg_sdl"
+license = "MIT"
+edition = "2021"
 version = "0.1.0"
 resolver = "2"
 description = "A SDL2-superset library for easy game or application development."
@@ -15,18 +16,18 @@ keywords = ["SDL", "gui", "graphics", "superset", "engine"]
 # documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
 
 [lib]
-path = "src/lib.rs"
+path = "pg_sdl/src/lib.rs"
 
 [dependencies]
-macros = { path = "macros", version = "0.1.0" }
-pg_sdl = { path = "pg_sdl", version = "0.1.0" }
+sdl2 = { version = "0.35.2", features = ["ttf", "gfx"] }
+itertools = "0.10.5"
 
 [[bin]]
 name = "pg_sdl2"
 path = "examples/main.rs"
 
-[[example]]
-name = "basic"
+# [[example]]
+# name = "basic"
 
-[[example]]
-name = "main"
+# [[example]]
+# name = "main"

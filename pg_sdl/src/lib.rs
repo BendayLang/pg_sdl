@@ -24,7 +24,6 @@ pub mod prelude {
     pub use crate::text::{Text, TextDrawer};
     pub use crate::widgets::Widget;
     pub use crate::widgets::{Button, Orientation, Slider, SliderType};
-    pub use fontdue::layout::{HorizontalAlign, VerticalAlign};
     pub use sdl2::{
         self,
         pixels::Color,

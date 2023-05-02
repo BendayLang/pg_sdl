@@ -15,50 +15,7 @@ use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
 use sdl2::ttf::FontStyle;
 
-fn draw_text(
-    canvas: &mut Canvas<Window>,
-    position: Point,
-    text: &str,
-    font_name: &str,
-    font_size: u16,
-    font_style: sdl2::ttf::FontStyle,
-    color: Color,
-) {
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
 
-    let font_name = format!(
-        "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts/{}.ttf",
-        font_name
-    );
-    let mut font = ttf_context
-        .load_font(Path::new(font_name.as_str()), font_size)
-        .unwrap();
-    font.set_style(font_style);
-
-    // render a surface, and convert it to a texture bound to the canvas
-    let surface = font
-        .render(text)
-        .blended(color)
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let texture_creator = canvas.texture_creator();
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let TextureQuery { width, height, .. } = texture.query();
-
-    let target = rect!(
-        position.x - (width / 2) as i32,
-        position.y - (height / 2) as i32,
-        width,
-        height
-    );
-
-    canvas.copy(&texture, None, Some(target)).unwrap();
-}
 
 pub struct MyApp {
     buttons: Vec<Button>,
@@ -145,15 +102,15 @@ impl UserApp for MyApp {
         canvas.set_draw_color(Colors::BLACK);
         let center = point!(500, 400);
 
-        draw_text(
-            canvas,
-            center,
-            "bob le bricoleur",
-            "DejaVuSans",
-            40,
-            sdl2::ttf::FontStyle::NORMAL,
-            Colors::BLACK,
-        );
+        // draw_text(
+        //     canvas,
+        //     center,
+        //     "bob le bricoleur",
+        //     "DejaVuSans",
+        //     40,
+        //     sdl2::ttf::FontStyle::NORMAL,
+        //     Colors::BLACK,
+        // );
     }
 }
 

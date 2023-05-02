@@ -134,15 +134,15 @@ impl UserApp for MyApp {
         }
 
         let text = self.text.clone();
-        text_drawer.draw(
-            canvas,
-            &Text::new(text, 20.0),
-            point!(130.0, 250.0),
-            None,
-            None,
-            HorizontalAlign::Left,
-            VerticalAlign::Top,
-        );
+        // text_drawer.draw(
+        //     canvas,
+        //     &Text::new(text, 20.0),
+        //     point!(130.0, 250.0),
+        //     None,
+        //     None,
+        //     HorizontalAlign::Left,
+        //     VerticalAlign::Top,
+        // );
     }
 }
 

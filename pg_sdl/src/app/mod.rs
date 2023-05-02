@@ -1,12 +1,27 @@
 use crate::prelude::*;
-use fontdue::layout::{HorizontalAlign, VerticalAlign};
-use sdl2::{pixels::Color, render::Canvas, video::Window};
-use std::time::Instant;
+use sdl2::{pixels::Color, render::Canvas, ttf::FontStyle, video::Window};
+use std::{fmt::format, time::Instant};
 
 pub trait UserApp {
     fn update(&mut self, delta: f32, input: &Input) -> bool;
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
+
+// #[cfg(windows)]
+// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
+//     macros::init_fonts!(
+//         "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts",
+//         ["DejaVuSans.ttf", "DejaVuSans.ttf"]
+//     )
+// }
+
+// #[cfg(unix)]
+// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
+//     macros::init_fonts!(
+//         "/usr/share/fonts/TTF",
+//         ["Vera.ttf", "VeraBd.ttf", "VeraIt.ttf"],
+//     )
+// }
 
 pub struct App {
     pub input: Input,
@@ -86,12 +101,15 @@ impl App {
                     .unwrap();
                 self.text_drawer.draw(
                     &mut self.canvas,
-                    &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 30.0),
-                    point!(10.0, 1.0),
-                    None,
-                    None,
-                    HorizontalAlign::Left,
-                    VerticalAlign::Top,
+                    point!(100.0, 100.0),
+                    &format!("FPS: {0:.0}", 1.0 / frame_time),
+                    #[cfg(unix)]
+                    "/usr/share/fonts/TTF/VeraIt.ttf",
+                    #[cfg(windows)]
+                    "path.,.",
+                    50,
+                    FontStyle::NORMAL,
+                    Color::BLACK,
                 );
             }
 
