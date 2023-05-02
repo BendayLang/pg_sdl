@@ -3,12 +3,11 @@ use crate::{
     canvas::fill_rect,
     color::{darker, Colors},
     input::{Input, KeyState},
-    text::Text,
     text::TextDrawer,
     widgets::Widget,
     widgets::{HOVER, PUSH},
 };
-use fontdue::layout::{HorizontalAlign, VerticalAlign};
+use crate::prelude::*;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -102,23 +101,7 @@ impl Widget for Button {
         }
 
         if let Some(text) = &self.text {
-            /*
-            text_drawer.q_draw(canvas,
-                               "bob",
-                               text.text.as_str(),
-                               &LayoutSettings::default(),
-                               Colors::BLACK,
-                               20.0);
-             */
-            text_drawer.draw(
-                canvas,
-                text,
-                self.rect.top_left(),
-                Some(self.rect.width() as f32),
-                Some(self.rect.height() as f32),
-                HorizontalAlign::Center,
-                VerticalAlign::Middle,
-            );
+            //TODO: center text
         }
     }
 }

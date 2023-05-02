@@ -1,11 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
-extern crate pg_sdl;
-extern crate pg_sdl2;
-
 use pg_sdl::blocs::set_child;
 use pg_sdl::prelude::*;
-use pg_sdl2::prelude::sdl2::gfx::primitives::DrawRenderer;
 use std::collections::HashMap;
 
 enum AppState {

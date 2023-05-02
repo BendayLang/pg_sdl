@@ -1,67 +1,71 @@
+use crate::prelude::*;
 use std::collections::HashMap;
 mod text;
-
-use fontdue;
-use fontdue::layout::{CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign};
-use fontdue_sdl2::FontTexture;
-use sdl2::rect::Point;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
+use sdl2::render::TextureQuery;
+use std::path::Path;
 pub use text::Text;
-
 
 pub struct TextDrawer {
     pub texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>,
+    fonts: HashMap<(String, usize), sdl2::ttf::Font<'static, 'static>>,
 }
 
 impl TextDrawer {
     pub fn new(texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>) -> Self {
-
         TextDrawer {
             texture_creator,
-                }
+            fonts: HashMap::new(),
+        }
     }
 
     // // TODO use this to call the [draw_text] fn with a font name instead of its index
     // fn font_index_from_name(&self, name: &str) -> Option<&usize> {
     //     self.fonts_id.get(name)
     // }
-    
+
     pub fn draw(
         &mut self,
         canvas: &mut Canvas<Window>,
-        text: &Text,
         position: Point,
-        width: Option<f32>,
-        height: Option<f32>,
-        horizontal_align: HorizontalAlign,
-        vertical_align: VerticalAlign,
+        text: &str,
+        font_path: &str,
+        font_size: u16,
+        font_style: sdl2::ttf::FontStyle,
+        color: Color,
     ) {
-        // let mut font_texture = FontTexture::new(&self.texture_creator).unwrap();
-        // let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        
-        // let width = Some(if width == None{
-        //     text.text.len() as f32 * text.font_size
-        // } else { width.unwrap() });
-        // layout.reset(&LayoutSettings {
-        //     x: position.x as f32,
-        //     y: position.y as f32,
-        //     max_width: width,
-        //     max_height: height,
-        //     horizontal_align,
-        //     vertical_align,
-        //     wrap_style: fontdue::layout::WrapStyle::Word,
-        //     wrap_hard_breaks: false,
-        //     line_height: 1.,
-        // });
-        // layout.append(
-        //     &self.fonts,
-        //     &TextStyle::with_user_data(
-        //         &text.text,
-        //         text.font_size,
-        //         text.font_index,
-        //         text.color),
+        let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
+
+        // let font_name = format!(
+        //     "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts/{}.ttf",
+        //     font_name
         // );
-        // font_texture.draw_text(canvas, &self.fonts, layout.glyphs()).unwrap();
+        let mut font = ttf_context
+            .load_font(Path::new(font_path), font_size)
+            .unwrap();
+        font.set_style(font_style);
+
+        // render a surface, and convert it to a texture bound to the canvas
+        let surface = font
+            .render(text)
+            .blended(color)
+            .map_err(|e| e.to_string())
+            .unwrap();
+
+        let texture = self
+            .texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())
+            .unwrap();
+
+        let TextureQuery { width, height, .. } = texture.query();
+
+        let target = rect!(
+            position.x - (width / 2) as i32,
+            position.y - (height / 2) as i32,
+            width,
+            height
+        );
+
+        canvas.copy(&texture, None, Some(target)).unwrap();
     }
 }

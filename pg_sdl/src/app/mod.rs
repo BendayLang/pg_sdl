@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use fontdue::layout::{HorizontalAlign, VerticalAlign};
-use sdl2::{pixels::Color, render::Canvas, video::Window};
-use std::time::Instant;
+use sdl2::{pixels::Color, render::Canvas, ttf::FontStyle, video::Window};
+use std::{fmt::format, time::Instant};
 
 pub trait UserApp {
     fn update(&mut self, delta: f32, input: &Input) -> bool;
@@ -84,14 +83,23 @@ impl App {
                 self.canvas
                     .fill_rect(rect!(10.0, 1.0, 120.0, 32.0))
                     .unwrap();
+                // self.text_drawer.draw(
+                //     &mut self.canvas,
+                //     &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 30.0),
+                //     point!(10.0, 1.0),
+                //     None,
+                //     None,
+                //     HorizontalAlign::Left,
+                //     VerticalAlign::Top,
+                // );
                 self.text_drawer.draw(
                     &mut self.canvas,
-                    &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 30.0),
                     point!(10.0, 1.0),
-                    None,
-                    None,
-                    HorizontalAlign::Left,
-                    VerticalAlign::Top,
+                    &format!("FPS: {0:.0}", 1.0 / frame_time),
+                    "path",
+                    30,
+                    FontStyle::NORMAL,
+                    Color::BLACK,
                 );
             }
 

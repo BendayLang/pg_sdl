@@ -20,17 +20,14 @@ path = "pg_sdl/src/lib.rs"
 
 [dependencies]
 sdl2 = { version = "0.35.2", features = ["ttf", "gfx"] }
-fontdue-sdl2 = "0.3"
-fontdue = "0.7.3"
 itertools = "0.10.5"
-num = "0.4.0"
 
 [[bin]]
 name = "pg_sdl2"
 path = "examples/basic.rs"
 
-[[example]]
-name = "basic"
+# [[example]]
+# name = "basic"
 
-[[example]]
-name = "main"
+# [[example]]
+# name = "main"
