@@ -136,11 +136,17 @@ impl UserApp for MyApp {
         DrawRenderer::rounded_rectangle(canvas, 100, 300, 420, 500, radius as i16, Colors::BLACK)
             .expect("DrawRenderer failed");
 
+        let texture_creator = canvas.texture_creator();
         for (_id, bloc) in &self.blocs {
             if bloc.parent != None {
                 continue;
             }
-            draw_bloc(bloc, &self.blocs, canvas, text_drawer);
+            let surface = draw_bloc(bloc, &self.blocs, canvas, text_drawer, &texture_creator);
+            let texture = texture_creator
+                .create_texture_from_surface(&surface)
+                .map_err(|e| e.to_string())
+                .unwrap();
+            canvas.copy(&texture, None, Some(bloc.get_rect())).unwrap();
         }
 
         // text of blocs
