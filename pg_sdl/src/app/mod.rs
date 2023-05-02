@@ -97,17 +97,21 @@ impl App {
             if self.draw_fps {
                 self.canvas.set_draw_color(Color::WHITE);
                 self.canvas
-                    .fill_rect(rect!(10.0, 1.0, 120.0, 32.0))
+                    .fill_rect(rect!(10.0, 2.0, 120.0, 32.0))
                     .unwrap();
+
+                let font_path = if cfg!(target_os = "unix") {
+                    "/usr/share/fonts/TTF/VeraIt.ttf"
+                } else {
+                    "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts/DejaVuSans.ttf"
+                };
+
                 self.text_drawer.draw(
                     &mut self.canvas,
-                    point!(100.0, 100.0),
+                    point!(65.0, 17.0),
                     &format!("FPS: {0:.0}", 1.0 / frame_time),
-                    #[cfg(unix)]
-                    "/usr/share/fonts/TTF/VeraIt.ttf",
-                    #[cfg(windows)]
-                    "path.,.",
-                    50,
+                    font_path,
+                    24,
                     FontStyle::NORMAL,
                     Color::BLACK,
                 );
