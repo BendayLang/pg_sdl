@@ -7,21 +7,16 @@ pub use text::Text;
 
 pub struct TextDrawer {
     pub texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>,
-    fonts: HashMap<(String, usize), sdl2::ttf::Font<'static, 'static>>,
+    ttf_context: sdl2::ttf::Sdl2TtfContext,
 }
 
 impl TextDrawer {
     pub fn new(texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>) -> Self {
         TextDrawer {
             texture_creator,
-            fonts: HashMap::new(),
+            ttf_context: sdl2::ttf::init().map_err(|e| e.to_string()).unwrap(),
         }
     }
-
-    // // TODO use this to call the [draw_text] fn with a font name instead of its index
-    // fn font_index_from_name(&self, name: &str) -> Option<&usize> {
-    //     self.fonts_id.get(name)
-    // }
 
     pub fn draw(
         &mut self,
@@ -32,16 +27,12 @@ impl TextDrawer {
         font_size: u16,
         font_style: sdl2::ttf::FontStyle,
         color: Color,
-    ) {
-        let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
+    ) {            
+        let mut font: sdl2::ttf::Font = self
+                .ttf_context
+                .load_font(Path::new(font_path), font_size)
+                .unwrap();
 
-        // let font_name = format!(
-        //     "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts/{}.ttf",
-        //     font_name
-        // );
-        let mut font = ttf_context
-            .load_font(Path::new(font_path), font_size)
-            .unwrap();
         font.set_style(font_style);
 
         // render a surface, and convert it to a texture bound to the canvas

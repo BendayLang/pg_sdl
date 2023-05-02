@@ -7,6 +7,22 @@ pub trait UserApp {
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
 
+// #[cfg(windows)]
+// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
+//     macros::init_fonts!(
+//         "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts",
+//         ["DejaVuSans.ttf", "DejaVuSans.ttf"]
+//     )
+// }
+
+// #[cfg(unix)]
+// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
+//     macros::init_fonts!(
+//         "/usr/share/fonts/TTF",
+//         ["Vera.ttf", "VeraBd.ttf", "VeraIt.ttf"],
+//     )
+// }
+
 pub struct App {
     pub input: Input,
     pub canvas: Canvas<Window>,
@@ -83,21 +99,15 @@ impl App {
                 self.canvas
                     .fill_rect(rect!(10.0, 1.0, 120.0, 32.0))
                     .unwrap();
-                // self.text_drawer.draw(
-                //     &mut self.canvas,
-                //     &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 30.0),
-                //     point!(10.0, 1.0),
-                //     None,
-                //     None,
-                //     HorizontalAlign::Left,
-                //     VerticalAlign::Top,
-                // );
                 self.text_drawer.draw(
                     &mut self.canvas,
-                    point!(10.0, 1.0),
+                    point!(100.0, 100.0),
                     &format!("FPS: {0:.0}", 1.0 / frame_time),
-                    "path",
-                    30,
+                    #[cfg(unix)]
+                    "/usr/share/fonts/TTF/VeraIt.ttf",
+                    #[cfg(windows)]
+                    "path.,.",
+                    50,
                     FontStyle::NORMAL,
                     Color::BLACK,
                 );

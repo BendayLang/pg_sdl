@@ -127,10 +127,10 @@ impl UserApp for MyApp {
         }
 
         let radius = 2_u32.pow(self.sliders[0].get_value() as u32 + 1);
-        DrawRenderer::rounded_box(canvas, 100, 300, 420, 500, radius as i16, Colors::GREEN)
-            .expect("DrawRenderer failed");
-        DrawRenderer::rounded_rectangle(canvas, 100, 300, 420, 500, radius as i16, Colors::BLACK)
-            .expect("DrawRenderer failed");
+        // DrawRenderer::rounded_box(canvas, 100, 300, 420, 500, radius as i16, Colors::GREEN)
+        //     .expect("DrawRenderer failed");
+        // DrawRenderer::rounded_rectangle(canvas, 100, 300, 420, 500, radius as i16, Colors::BLACK)
+        //     .expect("DrawRenderer failed");
 
         for (_id, bloc) in &self.blocs {
             if bloc.parent != None {
@@ -148,15 +148,15 @@ impl UserApp for MyApp {
                 .collect::<Vec<String>>()
                 .join("\n")
         );
-        text_drawer.draw(
-            canvas,
-            &Text::new(text, 12.0),
-            point!(130.0, 550.0),
-            None,
-            None,
-            HorizontalAlign::Left,
-            VerticalAlign::Top,
-        );
+        // text_drawer.draw(
+        //     canvas,
+        //     &Text::new(text, 12.0),
+        //     point!(130.0, 550.0),
+        //     None,
+        //     None,
+        //     HorizontalAlign::Left,
+        //     VerticalAlign::Top,
+        // );
     }
 }
 
