@@ -18,27 +18,26 @@ impl TextDrawer {
         }
     }
 
-    pub fn draw(
-        &mut self,
-        canvas: &mut Canvas<Window>,
-        position: Point,
-        text: &str,
-        font_path: &str,
-        font_size: u16,
-        font_style: sdl2::ttf::FontStyle,
-        color: Color,
-    ) {            
-        let mut font: sdl2::ttf::Font = self
-                .ttf_context
-                .load_font(Path::new(font_path), font_size)
-                .unwrap();
+    pub fn draw(&mut self, canvas: &mut Canvas<Window>, position: Point, text: &Text) {
+        let Text {
+            text,
+            font_path,
+            font_size,
+            font_style,
+            color,
+        } = text;
 
-        font.set_style(font_style);
+        let mut font: sdl2::ttf::Font = self
+            .ttf_context
+            .load_font(Path::new(&font_path), *font_size)
+            .unwrap();
+
+        font.set_style(*font_style);
 
         // render a surface, and convert it to a texture bound to the canvas
         let surface = font
-            .render(text)
-            .blended(color)
+            .render(text.as_str())
+            .blended(*color)
             .map_err(|e| e.to_string())
             .unwrap();
 

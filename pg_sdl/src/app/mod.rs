@@ -109,11 +109,7 @@ impl App {
                 self.text_drawer.draw(
                     &mut self.canvas,
                     point!(65.0, 17.0),
-                    &format!("FPS: {0:.0}", 1.0 / frame_time),
-                    font_path,
-                    24,
-                    FontStyle::NORMAL,
-                    Color::BLACK,
+                    &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 24),
                 );
             }
 

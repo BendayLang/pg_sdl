@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use crate::{
     canvas::draw_rounded_rect,
     canvas::fill_rect,
@@ -7,7 +8,6 @@ use crate::{
     widgets::Widget,
     widgets::{HOVER, PUSH},
 };
-use crate::prelude::*;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -101,7 +101,7 @@ impl Widget for Button {
         }
 
         if let Some(text) = &self.text {
-            //TODO: center text
+            text_drawer.draw(canvas, self.rect.center(), &text);
         }
     }
 }

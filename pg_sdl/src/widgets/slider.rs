@@ -321,53 +321,20 @@ impl Widget for Slider {
         };
         fill_rect(canvas, rect, self.corner_radius);
 
-        // Text
-        // match &self.slider_type {
-        //     SliderType::Discrete { snap, display, .. } => {
-        //         if let Some(format) = display {
-        //             let value = (self.value * *snap as f32).round() as u32;
-        //             let text = format(value);
-        //             text_drawer.draw(
-        //                 canvas,
-        //                 &Text::new(text, 20.0),
-        //                 rect.center(),
-        //                 None,
-        //                 None,
-        //                 HorizontalAlign::Left,
-        //                 VerticalAlign::Top,
-        //             );
-        //             /*
-        //             draw_text(
-        //                 canvas,
-        //                 "bob",
-        //                 "DejaVuSans.ttf",
-        //                 TextureCreator::create_texture(
-        //                     &canvas.texture_creator(),
-        //                     None,
-        //                     TextureAccess::Target,
-        //                     100,
-        //                     100,
-        //                 )
-        //                 .unwrap(),
-        //                 FontStyle::NORMAL,
-        //             );
-        //              */
-        //         }
-        //     }
-        //     SliderType::Continuous { display, .. } => {
-        //         if let Some(format) = display {
-        //             let text = format(self.value);
-        //             text_drawer.draw(
-        //                 canvas,
-        //                 &Text::new(text, 20.0),
-        //                 rect.center(),
-        //                 None,
-        //                 None,
-        //                 HorizontalAlign::Left,
-        //                 VerticalAlign::Top,
-        //             );
-        //         }
-        //     }
-        // }
+        match &self.slider_type {
+            SliderType::Discrete { snap, display, .. } => {
+                if let Some(format) = display {
+                    let value = (self.value * *snap as f32).round() as u32;
+                    let text = format(value);
+                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20));
+                }
+            }
+            SliderType::Continuous { display, .. } => {
+                if let Some(format) = display {
+                    let text = format(self.value);
+                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20));
+                }
+            }
+        }
     }
 }

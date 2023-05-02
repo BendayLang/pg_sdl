@@ -2,6 +2,7 @@
 
 use pg_sdl::blocs::set_child;
 use pg_sdl::prelude::*;
+use sdl2::gfx::primitives::DrawRenderer;
 use std::collections::HashMap;
 
 enum AppState {
@@ -127,10 +128,27 @@ impl UserApp for MyApp {
         }
 
         let radius = 2_u32.pow(self.sliders[0].get_value() as u32 + 1);
-        // DrawRenderer::rounded_box(canvas, 100, 300, 420, 500, radius as i16, Colors::GREEN)
-        //     .expect("DrawRenderer failed");
-        // DrawRenderer::rounded_rectangle(canvas, 100, 300, 420, 500, radius as i16, Colors::BLACK)
-        //     .expect("DrawRenderer failed");
+        let rect = (200, 400, 520, 600);
+        DrawRenderer::rounded_box(
+            canvas,
+            rect.0,
+            rect.1,
+            rect.2,
+            rect.3,
+            radius as i16,
+            Colors::GREEN,
+        )
+        .expect("DrawRenderer failed");
+        DrawRenderer::rounded_rectangle(
+            canvas,
+            rect.0,
+            rect.1,
+            rect.2,
+            rect.3,
+            radius as i16,
+            Colors::BLACK,
+        )
+        .expect("DrawRenderer failed");
 
         let texture_creator = canvas.texture_creator();
         for (_id, bloc) in &self.blocs {
@@ -173,14 +191,14 @@ fn main() {
                 Colors::ROYAL_BLUE,
                 rect!(100, 100, 200, 100),
                 Some(9),
-                Some(Text::new("New bloc".to_string(), 20.0)),
+                Some(Text::new("New bloc".to_string(), 20)),
             ),
             Button::new(Colors::GREY, rect!(550, 20, 80, 50), None, None),
             Button::new(
                 Colors::GREEN,
                 rect!(400, 200, 100, 100),
                 Some(8),
-                Some(Text::new("Reset Slider 1".to_string(), 20.0)),
+                Some(Text::new("Reset Slider 1".to_string(), 20)),
             ),
         ],
         sliders: vec![
