@@ -326,13 +326,13 @@ impl Widget for Slider {
                 if let Some(format) = display {
                     let value = (self.value * *snap as f32).round() as u32;
                     let text = format(value);
-                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20));
+                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20, None));
                 }
             }
             SliderType::Continuous { display, .. } => {
                 if let Some(format) = display {
                     let text = format(self.value);
-                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20));
+                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20, None));
                 }
             }
         }

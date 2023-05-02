@@ -21,7 +21,7 @@ impl TextDrawer {
     pub fn draw(&mut self, canvas: &mut Canvas<Window>, position: Point, text: &Text) {
         let Text {
             text,
-            font_path,
+            font_name: font_path,
             font_size,
             font_style,
             color,

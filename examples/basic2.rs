@@ -153,14 +153,14 @@ fn main() {
                 Colors::ROYAL_BLUE,
                 rect!(100, 100, 200, 100),
                 Some(9),
-                Some(Text::new("New bloc".to_string(), 20.0)),
+                Some(Text::new("New bloc".to_string(), 20, None)),
             ),
             Button::new(Colors::GREY, rect!(550, 20, 80, 50), Some(7), None),
             Button::new(
                 Colors::GREEN,
                 rect!(400, 200, 100, 100),
                 Some(8),
-                Some(Text::new("Reset Slider 1".to_string(), 20.0)),
+                Some(Text::new("Reset Slider 1".to_string(), 20, None)),
             ),
         ],
         sliders: vec![
