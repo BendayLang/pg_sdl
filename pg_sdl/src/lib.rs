@@ -9,6 +9,7 @@ pub mod draw_circle;
 pub mod input;
 pub mod text;
 pub mod utils;
+pub mod vector2;
 pub mod widgets;
 
 pub mod prelude {

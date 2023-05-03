@@ -5,71 +5,11 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureAccess, TextureCreator, TextureQuery};
 use sdl2::ttf::FontStyle;
-use sdl2::video::Window;
+use sdl2::video::{Window, WindowContext};
 use std::fmt::Display;
 
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 800;
-
-/// Scale fonts to a reasonable size when they're too big (though they might look less smooth)
-fn get_centered_rect(rect_width: u32, rect_height: u32, cons_width: u32, cons_height: u32) -> Rect {
-    let wr = rect_width as f32 / cons_width as f32;
-    let hr = rect_height as f32 / cons_height as f32;
-
-    let (w, h) = if wr > 1f32 || hr > 1f32 {
-        if wr > hr {
-            println!("Scaling down! The text will look worse!");
-            let h = (rect_height as f32 / wr) as i32;
-            (cons_width as i32, h)
-        } else {
-            println!("Scaling down! The text will look worse!");
-            let w = (rect_width as f32 / hr) as i32;
-            (w, cons_height as i32)
-        }
-    } else {
-        (rect_width as i32, rect_height as i32)
-    };
-
-    let cx = (SCREEN_WIDTH as i32 - w) / 2;
-    let cy = (SCREEN_HEIGHT as i32 - h) / 2;
-    rect!(cx, cy, w, h)
-}
-
-fn draw_text(
-    canvas: &mut Canvas<Window>,
-    text: &str,
-    font: &mut sdl2::ttf::Font,
-    texture_creator: &sdl2::render::TextureCreator<sdl2::video::WindowContext>,
-    font_style: Option<&sdl2::ttf::FontStyle>,
-) {
-    if let Some(font_style) = font_style {
-        font.set_style(*font_style);
-    }
-
-    // render a surface, and convert it to a texture bound to the canvas
-    let surface = font
-        .render(text)
-        .blended(Color::RGBA(255, 0, 0, 255))
-        .map_err(|e| e.to_string())
-        .unwrap();
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let TextureQuery { width, height, .. } = texture.query();
-
-    // If the example text is too big for the screen, downscale it (and center irregardless)
-    let padding = 0;
-    let target = get_centered_rect(
-        width,
-        height,
-        SCREEN_WIDTH - padding,
-        SCREEN_HEIGHT - padding,
-    );
-
-    canvas.copy(&texture, None, Some(target)).unwrap();
-}
 
 pub enum Orientation {
     Horizontal,
@@ -324,8 +264,7 @@ impl Widget for Slider {
         match &self.slider_type {
             SliderType::Discrete { snap, display, .. } => {
                 if let Some(format) = display {
-                    let value = (self.value * *snap as f32).round() as u32;
-                    let text = format(value);
+                    let text = format((self.value * *snap as f32).round() as u32);
                     text_drawer.draw(canvas, rect.center(), &Text::new(text, 20, None));
                 }
             }

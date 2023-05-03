@@ -24,7 +24,7 @@ itertools = "0.10.5"
 
 [[bin]]
 name = "pg_sdl2"
-path = "examples/main.rs"
+path = "examples/spring_test.rs"
 
 # [[example]]
 # name = "basic"

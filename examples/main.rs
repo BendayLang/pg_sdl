@@ -34,7 +34,8 @@ impl MyApp {
 
 impl UserApp for MyApp {
     fn update(&mut self, delta: f32, input: &Input) -> bool {
-        let mut changed = self
+        let mut changed = false;
+        changed |= self
             .widgets()
             .iter_mut()
             .any(|widget| widget.update(&input, delta));
@@ -58,7 +59,7 @@ impl UserApp for MyApp {
                     );
                 }
                 // Select a bloc
-                if input.mouse.left_button.is_pressed() {
+                else if input.mouse.left_button.is_pressed() {
                     let mouse_pos = input.mouse.position;
                     for (id, bloc) in &mut self.blocs {
                         if bloc.collide(mouse_pos) {
@@ -112,20 +113,9 @@ impl UserApp for MyApp {
     }
 
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        let widgets = self
-            .buttons
-            .iter_mut()
-            .map(|button| button as &mut dyn Widget)
-            .chain(
-                self.sliders
-                    .iter_mut()
-                    .map(|slider| slider as &mut dyn Widget),
-            )
-            .collect::<Vec<&mut dyn Widget>>();
-
-        for widget in widgets {
-            widget.draw(canvas, text_drawer);
-        }
+        self.widgets()
+            .iter()
+            .for_each(|widget| widget.draw(canvas, text_drawer));
 
         let radius = 2_u32.pow(self.sliders[0].get_value() as u32 + 1);
         let rect = (200, 400, 520, 600);
