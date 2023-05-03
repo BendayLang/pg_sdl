@@ -118,6 +118,10 @@ impl Slider {
         };
     }
 
+    pub fn set_value(&mut self, value: f32) {
+        self.value = value;
+    }
+
     fn thumb_position(&self) -> u32 {
         (self.value * self.length() as f32) as u32
     }

@@ -37,6 +37,13 @@ impl Vec2 {
     pub fn from_polar(length: f32, angle: f32) -> Self {
         Self::from_angle(angle) * length
     }
+    /// Returns a vector transformed by the given vector as new x and y directions
+    pub fn linear_transform(self, x_dir: Self, y_dir: Self) -> Self {
+        Self::new(
+            self.x * x_dir.x + self.y * y_dir.x,
+            self.x * x_dir.y + self.y * y_dir.y,
+        )
+    }
     /// Returns the length of the vector
     pub fn length(self) -> f32 {
         (self.x * self.x + self.y * self.y).sqrt()
@@ -52,6 +59,11 @@ impl Vec2 {
         } else {
             self / self.length()
         }
+    }
+    /// Returns a normalized vector normal to the vector
+    pub fn normal(self) -> Self {
+        let normalized = self.normalized();
+        Self::new(-normalized.y, normalized.x)
     }
     /// Returns the dot product of two vectors
     pub fn dot(self, other: Self) -> f32 {
@@ -72,7 +84,6 @@ impl Vec2 {
     pub fn set_angle_deg(&mut self, angle: f32) {
         self.set_angle(angle.to_radians());
     }
-
     /// Returns the angle of the vector in radians
     pub fn angle(self) -> f32 {
         self.y.atan2(self.x)

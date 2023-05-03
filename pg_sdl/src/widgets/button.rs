@@ -39,6 +39,13 @@ impl Button {
             state: KeyState::new(),
         }
     }
+    pub fn set_text(&mut self, new_text: String) {
+        if let Some(text) = &mut self.text {
+            text.text = new_text;
+        } else {
+            panic!("Button has no text")
+        }
+    }
 }
 
 impl Widget for Button {
