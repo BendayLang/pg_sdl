@@ -73,6 +73,10 @@ impl Vec2 {
     pub fn set_length(&mut self, length: f32) {
         *self *= length / self.length();
     }
+    /// Returns a new vector with the given length
+    pub fn with_length(self, length: f32) -> Self {
+        self * length / self.length()
+    }
     /// Sets the angle of the vector in radians
     pub fn set_angle(&mut self, angle: f32) {
         let length = self.length();
@@ -83,6 +87,16 @@ impl Vec2 {
     /// Sets the angle of the vector in degrees
     pub fn set_angle_deg(&mut self, angle: f32) {
         self.set_angle(angle.to_radians());
+    }
+    /// Returns a new vector with the given angle in radians
+    pub fn with_angle(self, angle: f32) -> Self {
+        let length = self.length();
+        let (sin, cos) = angle.sin_cos();
+        Self::new(length * cos, length * sin)
+    }
+    /// Returns a new vector with the given angle in degrees
+    pub fn with_angle_deg(self, angle: f32) -> Self {
+        self.with_angle(angle.to_radians())
     }
     /// Returns the angle of the vector in radians
     pub fn angle(self) -> f32 {
@@ -187,6 +201,18 @@ impl DivAssign for Vec2 {
     }
 }
 
+impl Add<f32> for Vec2 {
+    type Output = Self;
+    fn add(self, rhs: f32) -> Self::Output {
+        self.with_length(self.length() + rhs)
+    }
+}
+impl Sub<f32> for Vec2 {
+    type Output = Self;
+    fn sub(self, rhs: f32) -> Self::Output {
+        self.with_length(self.length() - rhs)
+    }
+}
 impl Mul<f32> for Vec2 {
     type Output = Self;
     fn mul(self, rhs: f32) -> Self::Output {
@@ -200,6 +226,16 @@ impl Div<f32> for Vec2 {
     }
 }
 
+impl AddAssign<f32> for Vec2 {
+    fn add_assign(&mut self, rhs: f32) {
+        *self = *self + rhs;
+    }
+}
+impl SubAssign<f32> for Vec2 {
+    fn sub_assign(&mut self, rhs: f32) {
+        *self = *self - rhs;
+    }
+}
 impl MulAssign<f32> for Vec2 {
     fn mul_assign(&mut self, rhs: f32) {
         *self = *self * rhs;
