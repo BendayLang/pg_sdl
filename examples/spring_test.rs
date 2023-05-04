@@ -84,26 +84,51 @@ impl Spring {
         };
 
         let draw_rect = |start: Vec2, end: Vec2, width: u8, color: Color| {
-            draw_thick_line(transform(start), transform(end), width, color);
-            let start1 = transform(start + Vec2::new_x(-(width as f32) / 2.0 / x_dir.length()));
-            let end1 = transform(start + Vec2::new_x((width as f32) / 2.0 / x_dir.length()));
+            DrawRenderer::thick_line(
+                canvas,
+                start.x as i16,
+                start.y as i16,
+                end.x as i16,
+                end.y as i16,
+                width,
+                color,
+            )
+            .unwrap();
+            let p = end - start;
+            let q = p.normal() * width as f32 / 2.0;
             DrawRenderer::line(
                 canvas,
-                start1.x as i16,
-                start1.y as i16,
-                end1.x as i16,
-                end1.y as i16,
+                (start.x + q.x) as i16,
+                (start.y + q.y) as i16,
+                (end.x + q.x) as i16,
+                (end.y + q.y) as i16,
                 Colors::BLACK,
             )
             .unwrap();
-            let start2 = transform(end + Vec2::new_x(-(width as f32) / 2.0 / x_dir.length()));
-            let end2 = transform(end + Vec2::new_x((width as f32) / 2.0 / x_dir.length()));
             DrawRenderer::line(
                 canvas,
-                start2.x as i16,
-                start2.y as i16,
-                end2.x as i16,
-                end2.y as i16,
+                (start.x - q.x) as i16,
+                (start.y - q.y) as i16,
+                (end.x - q.x) as i16,
+                (end.y - q.y) as i16,
+                Colors::BLACK,
+            )
+            .unwrap();
+            DrawRenderer::line(
+                canvas,
+                (start.x - q.x) as i16,
+                (start.y - q.y) as i16,
+                (start.x + q.x) as i16,
+                (start.y + q.y) as i16,
+                Colors::BLACK,
+            )
+            .unwrap();
+            DrawRenderer::line(
+                canvas,
+                (end.x - q.x) as i16,
+                (end.y - q.y) as i16,
+                (end.x + q.x) as i16,
+                (end.y + q.y) as i16,
                 Colors::BLACK,
             )
             .unwrap();
@@ -122,78 +147,85 @@ impl Spring {
             .unwrap();
         };
 
-        let draw_rounded_thick_line = |start: Vec2, end: Vec2, width: u8, color: Color| {
-            draw_circle(start, width as i16 / 2 + 1, color);
-            draw_circle(end, width as i16 / 2 + 1, color);
-            draw_thick_line(start, end, width, color);
-        };
-
-        /*
-        let start = transform(Vec2::new(0.0, 0.5));
-        let end = transform(Vec2::new(1.0, 0.5));
-        DrawRenderer::thick_line(
-            canvas,
-            start.x as i16,
-            start.y as i16,
-            end.x as i16,
-            end.y as i16,
-            self.width as u8,
-            Colors::WHITE,
-        )
-        .unwrap();
-         */
-
-        let start = self.start + y_dir.with_length(0.0);
-        draw_circle(start, (self.width / 4.0) as i16, self.color);
-        draw_thick_line(
-            self.start,
-            transform(Vec2::new(0.0, 0.5)),
-            (self.width / 2.0) as u8,
-            self.color,
-        );
-
-        draw_circle(self.end, (self.width / 4.0) as i16, self.color);
-        draw_thick_line(
-            transform(Vec2::new(1.0, 0.5)),
-            self.end,
-            (self.width / 2.0) as u8,
-            self.color,
-        );
-
-        let n = 4;
-        let dp = 0.5 / n as f32;
-
-        (0..n).for_each(|i| {
-            let p = i as f32 / n as f32;
-            draw_thick_line(
-                transform(Vec2::new(p, 0.0)),
-                transform(Vec2::new(p + dp, 1.0)),
-                (self.width / 4.0) as u8,
-                darker(self.color, 0.8),
+        if self.length() > self.width {
+            draw_circle(
+                self.start + y_dir.with_length(0.0),
+                (self.width / 4.0) as i16,
+                darker(self.color, 0.9),
             );
-        });
-        (0..n).for_each(|i| {
-            let p = i as f32 / n as f32;
-            draw_rounded_thick_line(
-                transform(Vec2::new(p + dp, 1.0)),
-                transform(Vec2::new(p + dp * 2.0, 0.0)),
-                (self.width / 3.5) as u8,
+            draw_thick_line(
+                self.start,
+                transform(Vec2::new(0.0, 0.5)),
+                (self.width / 2.0) as u8,
+                darker(self.color, 0.9),
+            );
+
+            draw_circle(self.end, (self.width / 4.0) as i16, darker(self.color, 0.9));
+            draw_thick_line(
+                transform(Vec2::new(1.0, 0.5)),
+                self.end,
+                (self.width / 2.0) as u8,
+                darker(self.color, 0.9),
+            );
+
+            let n = 4;
+            let dp = 1.0 / n as f32;
+
+            (0..n).for_each(|i| {
+                let p = i as f32 / n as f32;
+                draw_thick_line(
+                    transform(Vec2::new(p, 0.0)),
+                    transform(Vec2::new(p + dp / 2.0, 1.0)),
+                    (self.width / 4.0) as u8,
+                    darker(self.color, 0.8),
+                );
+            });
+            (0..n).for_each(|i| {
+                let p = i as f32 / n as f32;
+                let start = transform(Vec2::new(p + dp / 2.0, 1.0));
+                let end = transform(Vec2::new(p + dp, 0.0));
+                draw_circle(start, (self.width / 3.5) as u8 as i16 / 2 + 1, self.color);
+                draw_circle(end, (self.width / 3.5) as u8 as i16 / 2 + 1, self.color);
+                draw_thick_line(start, end, (self.width / 3.5) as u8, self.color);
+            });
+
+            draw_rect(
+                transform(Vec2::new(0.0, -0.15)),
+                transform(Vec2::new(0.0, 1.15)),
+                (self.width / 3.0) as u8,
                 self.color,
             );
-        });
+            draw_rect(
+                transform(Vec2::new(1.0, -0.15)),
+                transform(Vec2::new(1.0, 1.15)),
+                (self.width / 3.0) as u8,
+                self.color,
+            );
+        } else {
+            draw_circle(
+                self.start,
+                (self.width / 4.0) as i16,
+                darker(self.color, 0.9),
+            );
+            draw_circle(self.end, (self.width / 4.0) as i16, darker(self.color, 0.9));
+            draw_thick_line(
+                self.start,
+                self.end,
+                (self.width / 2.0) as u8,
+                darker(self.color, 0.9),
+            );
 
-        draw_rect(
-            Vec2::new(0.0, -0.15),
-            Vec2::new(0.0, 1.15),
-            (self.width / 3.0) as u8,
-            self.color,
-        );
-        draw_rect(
-            Vec2::new(1.0, -0.15),
-            Vec2::new(1.0, 1.15),
-            (self.width / 3.0) as u8,
-            self.color,
-        );
+            let delta = self.end - self.start;
+            draw_rect(
+                self.start + delta / 2.0 + y_dir.normalized() * self.width * 1.3 / 2.0,
+                self.start + delta / 2.0 - y_dir.normalized() * self.width * 1.3 / 2.0,
+                (self.width / 3.0) as u8,
+                self.color,
+            );
+        }
+
+        draw_circle(self.start, (self.width / 6.0) as i16, self.color);
+        draw_circle(self.end, (self.width / 6.0) as i16, self.color);
     }
 }
 
@@ -362,7 +394,7 @@ fn main() {
             Vec2::new(600.0, 300.0),
             Vec2::new(600.0, 450.0),
             0.2,
-            0.01,
+            0.05,
             40.0,
             Colors::BEIGE,
         ),
