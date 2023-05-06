@@ -1,298 +1,18 @@
+mod physics_objects;
+
 use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
-use sdl2::gfx::primitives::DrawRenderer;
+use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
 
-struct Spring {
-    start: Vec2,
-    end: Vec2,
-    /// the force constant of the spring
-    k: f32,
-    /// the damping of the spring
-    b: f32,
-    default_length: f32,
-    width: f32,
-    color: Color,
-}
-
-impl Spring {
-    fn new(start: Vec2, end: Vec2, k: f32, b: f32, radius: f32, color: Color) -> Self {
-        Self {
-            default_length: (start - end).length(),
-            start,
-            end,
-            k,
-            b,
-            width: radius,
-            color,
-        }
-    }
-
-    fn direction(&self) -> Vec2 {
-        (self.end - self.start).normalized()
-    }
-
-    fn length(&self) -> f32 {
-        (self.end - self.start).length()
-    }
-
-    fn get_force(&self, mass: &Mass) -> Vec2 {
-        let force = -self.k * (self.length() - self.default_length);
-        let damping = -self.b * mass.velocity.dot(self.direction());
-        self.direction() * (force + damping)
-    }
-
-    fn draw(&self, canvas: &mut Canvas<Window>) {
-        let x_dir = self.end - self.start - self.width;
-        let y_dir = x_dir.normal() * self.width;
-        let transform = |v: Vec2| {
-            self.start - y_dir / 2.0
-                + x_dir.with_length(self.width / 2.0)
-                + v.linear_transform(x_dir, y_dir)
-        };
-
-        let draw_thick_line = |start: Vec2, end: Vec2, width: u8, color: Color| {
-            DrawRenderer::thick_line(
-                canvas,
-                start.x as i16,
-                start.y as i16,
-                end.x as i16,
-                end.y as i16,
-                width,
-                color,
-            )
-            .unwrap();
-            let p = end - start;
-            let q = p.normal() * width as f32 / 2.0;
-            DrawRenderer::line(
-                canvas,
-                (start.x + q.x) as i16,
-                (start.y + q.y) as i16,
-                (end.x + q.x) as i16,
-                (end.y + q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-            DrawRenderer::line(
-                canvas,
-                (start.x - q.x) as i16,
-                (start.y - q.y) as i16,
-                (end.x - q.x) as i16,
-                (end.y - q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-        };
-
-        let draw_rect = |start: Vec2, end: Vec2, width: u8, color: Color| {
-            DrawRenderer::thick_line(
-                canvas,
-                start.x as i16,
-                start.y as i16,
-                end.x as i16,
-                end.y as i16,
-                width,
-                color,
-            )
-            .unwrap();
-            let p = end - start;
-            let q = p.normal() * width as f32 / 2.0;
-            DrawRenderer::line(
-                canvas,
-                (start.x + q.x) as i16,
-                (start.y + q.y) as i16,
-                (end.x + q.x) as i16,
-                (end.y + q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-            DrawRenderer::line(
-                canvas,
-                (start.x - q.x) as i16,
-                (start.y - q.y) as i16,
-                (end.x - q.x) as i16,
-                (end.y - q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-            DrawRenderer::line(
-                canvas,
-                (start.x - q.x) as i16,
-                (start.y - q.y) as i16,
-                (start.x + q.x) as i16,
-                (start.y + q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-            DrawRenderer::line(
-                canvas,
-                (end.x - q.x) as i16,
-                (end.y - q.y) as i16,
-                (end.x + q.x) as i16,
-                (end.y + q.y) as i16,
-                Colors::BLACK,
-            )
-            .unwrap();
-        };
-
-        let draw_circle = |center: Vec2, radius: i16, color: Color| {
-            DrawRenderer::filled_circle(canvas, center.x as i16, center.y as i16, radius, color)
-                .unwrap();
-            DrawRenderer::circle(
-                canvas,
-                center.x as i16,
-                center.y as i16,
-                radius,
-                Colors::BLACK,
-            )
-            .unwrap();
-        };
-
-        if self.length() > self.width {
-            draw_circle(
-                self.start + y_dir.with_length(0.0),
-                (self.width / 4.0) as i16,
-                darker(self.color, 0.9),
-            );
-            draw_thick_line(
-                self.start,
-                transform(Vec2::new(0.0, 0.5)),
-                (self.width / 2.0) as u8,
-                darker(self.color, 0.9),
-            );
-
-            draw_circle(self.end, (self.width / 4.0) as i16, darker(self.color, 0.9));
-            draw_thick_line(
-                transform(Vec2::new(1.0, 0.5)),
-                self.end,
-                (self.width / 2.0) as u8,
-                darker(self.color, 0.9),
-            );
-
-            let n = 4;
-            let dp = 1.0 / n as f32;
-
-            (0..n).for_each(|i| {
-                let p = i as f32 / n as f32;
-                draw_thick_line(
-                    transform(Vec2::new(p, 0.0)),
-                    transform(Vec2::new(p + dp / 2.0, 1.0)),
-                    (self.width / 4.0) as u8,
-                    darker(self.color, 0.8),
-                );
-            });
-            (0..n).for_each(|i| {
-                let p = i as f32 / n as f32;
-                let start = transform(Vec2::new(p + dp / 2.0, 1.0));
-                let end = transform(Vec2::new(p + dp, 0.0));
-                draw_circle(start, (self.width / 3.5) as u8 as i16 / 2 + 1, self.color);
-                draw_circle(end, (self.width / 3.5) as u8 as i16 / 2 + 1, self.color);
-                draw_thick_line(start, end, (self.width / 3.5) as u8, self.color);
-            });
-
-            draw_rect(
-                transform(Vec2::new(0.0, -0.15)),
-                transform(Vec2::new(0.0, 1.15)),
-                (self.width / 3.0) as u8,
-                self.color,
-            );
-            draw_rect(
-                transform(Vec2::new(1.0, -0.15)),
-                transform(Vec2::new(1.0, 1.15)),
-                (self.width / 3.0) as u8,
-                self.color,
-            );
-        } else {
-            draw_circle(
-                self.start,
-                (self.width / 4.0) as i16,
-                darker(self.color, 0.9),
-            );
-            draw_circle(self.end, (self.width / 4.0) as i16, darker(self.color, 0.9));
-            draw_thick_line(
-                self.start,
-                self.end,
-                (self.width / 2.0) as u8,
-                darker(self.color, 0.9),
-            );
-
-            let delta = self.end - self.start;
-            draw_rect(
-                self.start + delta / 2.0 + y_dir.normalized() * self.width * 1.3 / 2.0,
-                self.start + delta / 2.0 - y_dir.normalized() * self.width * 1.3 / 2.0,
-                (self.width / 3.0) as u8,
-                self.color,
-            );
-        }
-
-        draw_circle(self.start, (self.width / 6.0) as i16, self.color);
-        draw_circle(self.end, (self.width / 6.0) as i16, self.color);
-    }
-}
-
-struct Mass {
-    position: Vec2,
-    velocity: Vec2,
-    mass: f32,
-    radius: f32,
-    color: Color,
-    force_accumulator: Vec2,
-}
-impl Mass {
-    fn new(position: Vec2, velocity: Vec2, mass: f32, radius: f32, color: Color) -> Self {
-        Self {
-            position,
-            velocity,
-            mass,
-            radius,
-            color,
-            force_accumulator: Vec2::ZERO,
-        }
-    }
-
-    fn apply_force(&mut self, force: Vec2) {
-        self.force_accumulator += force;
-    }
-
-    fn update(&mut self, delta: f32) {
-        let acceleration = self.force_accumulator / self.mass;
-        self.velocity += acceleration * delta;
-        self.position += self.velocity * delta;
-
-        self.force_accumulator = Vec2::ZERO;
-    }
-
-    fn draw(&self, canvas: &mut Canvas<Window>) {
-        DrawRenderer::filled_circle(
-            canvas,
-            self.position.x as i16,
-            self.position.y as i16,
-            self.radius as i16,
-            self.color,
-        )
-        .unwrap();
-        DrawRenderer::circle(
-            canvas,
-            self.position.x as i16,
-            self.position.y as i16,
-            self.radius as i16,
-            Colors::BLACK,
-        )
-        .unwrap()
-    }
-
-    fn collide_point(&self, point: Vec2) -> bool {
-        (self.position - point).length() < self.radius
-    }
-}
-
+/// My app is the starting point of the application.
 pub struct MyApp {
     buttons: Vec<Button>,
     sliders: Vec<Slider>,
-    spring: Spring,
-    mass: Mass,
-    selected: Option<Spring>,
+    masses: Vec<Mass>,
+    rods: Vec<Rod>,
+    springs: Vec<Spring>,
+    motors: Vec<Motor>,
 }
-
 impl MyApp {
     fn widgets(&mut self) -> Vec<&mut dyn Widget> {
         self.buttons
@@ -309,9 +29,7 @@ impl MyApp {
 
 impl UserApp for MyApp {
     fn update(&mut self, delta: f32, input: &Input) -> bool {
-        let mut changed = false;
-        changed |= self
-            .widgets()
+        self.widgets()
             .iter_mut()
             .any(|widget| widget.update(&input, delta));
 
@@ -325,38 +43,42 @@ impl UserApp for MyApp {
             }
         }
 
-        self.mass.apply_force(Vec2::new_y(9.81) * self.mass.mass);
-        self.mass.apply_force(self.spring.get_force(&self.mass));
-
         if input.mouse.left_button.is_pressed() {
             let mouse_position = Vec2::from(input.mouse.position);
-            if self.mass.collide_point(mouse_position) {
-                self.spring.end = mouse_position;
-                self.selected = Some(Spring::new(
-                    mouse_position,
-                    self.mass.position,
-                    1.0,
-                    2.0,
-                    20.0,
-                    Colors::GREEN,
-                ));
-            }
+            self.masses.iter().enumerate().for_each(|(index, mass)| {
+                // TODO replace by take_while()
+                if mass.collide_point(mouse_position) {
+                    self.springs[0].change_end(index);
+                }
+            });
         } else if input.mouse.left_button.is_released() {
-            self.selected = None;
+            self.springs[0].change_end(0);
         }
 
-        if let Some(spring) = &mut self.selected {
-            let mouse_position = Vec2::from(input.mouse.position);
-            spring.start = mouse_position;
-            spring.end = self.mass.position;
-            self.mass.apply_force(spring.get_force(&self.mass));
-        }
+        apply_gravity(&mut self.masses);
+        self.springs.iter_mut().for_each(|spring| {
+            spring.apply_force(&mut self.masses);
+        });
 
-        self.mass.update(delta * self.sliders[0].get_value() * 10.0);
-        self.spring.end = self.mass.position;
+        let delta = delta * self.sliders[0].get_value() * 10.0;
 
-        changed = true;
-        changed
+        self.masses.iter_mut().for_each(|mass| mass.update(delta));
+        self.motors
+            .iter()
+            .for_each(|motor| motor.update(delta, &mut self.masses));
+
+        self.masses[0].position = Vec2::from(input.mouse.position);
+
+        // set mass 3 for constraining rod to its initial length
+        let delta_length = self.masses[3].position - self.masses[4].position;
+        self.masses[3].position =
+            self.masses[4].position + delta_length.normalized() * self.rods[0].length;
+
+        let delta_velocity = self.masses[3].velocity - self.masses[4].velocity;
+        let v1 = delta_velocity.dot(delta_length.perpendicular());
+        self.masses[3].velocity = self.masses[4].velocity + delta_length.perpendicular() * v1;
+
+        true
     }
 
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
@@ -364,11 +86,16 @@ impl UserApp for MyApp {
             .iter()
             .for_each(|widget| widget.draw(canvas, text_drawer));
 
-        self.mass.draw(canvas);
-        self.spring.draw(canvas);
-        if let Some(spring) = &mut self.selected {
-            spring.draw(canvas);
-        }
+        self.motors
+            .iter()
+            .for_each(|motor| motor.draw(canvas, &self.masses));
+        self.masses.iter().for_each(|mass| mass.draw(canvas));
+        self.rods
+            .iter()
+            .for_each(|rod| rod.draw(canvas, &self.masses));
+        self.springs
+            .iter()
+            .for_each(|spring| spring.draw(canvas, &self.masses));
     }
 }
 
@@ -390,24 +117,21 @@ fn main() {
             },
         )],
 
-        spring: Spring::new(
-            Vec2::new(600.0, 300.0),
-            Vec2::new(600.0, 450.0),
-            0.2,
-            0.05,
-            40.0,
-            Colors::BEIGE,
-        ),
-        mass: Mass::new(
-            Vec2::new(600.0, 400.0),
-            Vec2::ZERO,
-            1.0,
-            25.0,
-            Colors::RED_ORANGE,
-        ),
-        selected: None,
+        masses: Vec::from([
+            Mass::new(Vec2::new(0.0, 0.0), 0.0, 0.0, Colors::BLACK, true),
+            Mass::new(Vec2::new(600.0, 400.0), 1.0, 20.0, Colors::ORANGE, true),
+            Mass::new(Vec2::new(600.0, 450.0), 1.0, 15.0, Colors::ORANGE, true),
+            Mass::new(Vec2::new(600.0, 550.0), 5.0, 25.0, Colors::RED, false),
+            Mass::new(Vec2::new(800.0, 200.0), 1.0, 20.0, Colors::GREEN, true),
+        ]),
+        rods: Vec::from([Rod::new(3, 4, 250.0, 10.0, Colors::YELLOW)]),
+        springs: Vec::from([
+            Spring::new(0, 0, 1.0, 0.5, 0.0, 20.0, Colors::WHITE),
+            Spring::new(2, 3, 0.5, 0.2, 150.0, 40.0, Colors::BEIGE),
+        ]),
+        motors: Vec::from([Motor::new(1, 2, 0.4, Colors::LIGHT_GREY)]),
     };
 
-    let mut app: App = App::init("Spring test", 1200, 720, Some(60.0), true, Colors::SKY_BLUE);
+    let mut app: App = App::init("Spring test", 1200, 720, Some(90), true, Colors::SKY_BLUE);
     app.run(my_app);
 }

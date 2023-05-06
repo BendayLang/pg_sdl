@@ -28,7 +28,7 @@ pub struct App {
     pub canvas: Canvas<Window>,
     pub text_drawer: TextDrawer,
     pub background_color: Color,
-    fps: Option<f32>,
+    fps: Option<u32>,
     draw_fps: bool,
 }
 
@@ -37,7 +37,7 @@ impl App {
         window_title: &str,
         window_width: u32,
         window_height: u32,
-        fps: Option<f32>,
+        fps: Option<u32>,
         draw_fps: bool,
         background_color: Color,
     ) -> Self {
@@ -111,7 +111,7 @@ impl App {
 
             // Sleep
             if let Some(fps) = &self.fps {
-                let to_sleep = 1.0 / fps - frame_instant.elapsed().as_secs_f32();
+                let to_sleep = 1.0 / *fps as f32 - frame_instant.elapsed().as_secs_f32();
                 if to_sleep > 0.0 {
                     std::thread::sleep(std::time::Duration::from_secs_f32(to_sleep));
                 }

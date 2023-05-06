@@ -25,7 +25,7 @@ impl Colors {
     pub const BLUE: Color = Color::RGB(0, 0, 255);
     pub const VIOLET: Color = Color::RGB(127, 0, 255);
     pub const MAGENTA: Color = Color::RGB(255, 0, 255);
-    pub const ROSE: Color = Color::RGB(255, 0, 127);
+    pub const PINK: Color = Color::RGB(255, 0, 127);
 
     pub const SKY_BLUE: Color = Color::RGB(135, 206, 235);
     pub const ROYAL_BLUE: Color = Color::RGB(65, 105, 225);

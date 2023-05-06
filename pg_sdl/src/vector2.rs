@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// A 2D vector
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
@@ -17,15 +17,15 @@ impl Vec2 {
         sdl2::rect::Point::new(self.x as i32, self.y as i32)
     }
 
-    pub fn new(x: f32, y: f32) -> Self {
+    pub const fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
     /// Creates a vector with the given x coordinate and y = 0
-    pub fn new_x(x: f32) -> Self {
+    pub const fn new_x(x: f32) -> Self {
         Self { x, y: 0.0 }
     }
     /// Creates a vector with the given y coordinate and x = 0
-    pub fn new_y(y: f32) -> Self {
+    pub const fn new_y(y: f32) -> Self {
         Self { x: 0.0, y }
     }
     /// Creates a normalized vector with the angle in radians
@@ -33,9 +33,17 @@ impl Vec2 {
         let (sin, cos) = angle.sin_cos();
         Self::new(cos, sin)
     }
+    /// Creates a normalized vector with the angle in degrees
+    pub fn from_angle_deg(angle: f32) -> Self {
+        Self::from_angle(angle.to_radians())
+    }
     /// Creates a vector with the given length and angle in radians
     pub fn from_polar(length: f32, angle: f32) -> Self {
         Self::from_angle(angle) * length
+    }
+    /// Creates a vector with the given length and angle in degrees
+    pub fn from_polar_deg(length: f32, angle: f32) -> Self {
+        Self::from_polar(length, angle.to_radians())
     }
     /// Returns a vector transformed by the given vector as new x and y directions
     pub fn linear_transform(self, x_dir: Self, y_dir: Self) -> Self {
@@ -61,7 +69,7 @@ impl Vec2 {
         }
     }
     /// Returns a normalized vector normal to the vector
-    pub fn normal(self) -> Self {
+    pub fn perpendicular(self) -> Self {
         let normalized = self.normalized();
         Self::new(-normalized.y, normalized.x)
     }
@@ -154,6 +162,12 @@ impl fmt::Display for Vec2 {
         write!(f, "Vec2({}, {})", self.x, self.y)
     }
 }
+impl Neg for Vec2 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self::new(-self.x, -self.y)
+    }
+}
 
 impl Add for Vec2 {
     type Output = Self;
@@ -223,6 +237,31 @@ impl Div<f32> for Vec2 {
     type Output = Self;
     fn div(self, rhs: f32) -> Self::Output {
         Self::new(self.x / rhs, self.y / rhs)
+    }
+}
+
+impl Add<Vec2> for f32 {
+    type Output = Vec2;
+    fn add(self, rhs: Vec2) -> Self::Output {
+        Vec2::new(self + rhs.x, self + rhs.y)
+    }
+}
+impl Sub<Vec2> for f32 {
+    type Output = Vec2;
+    fn sub(self, rhs: Vec2) -> Self::Output {
+        Vec2::new(self - rhs.x, self - rhs.y)
+    }
+}
+impl Mul<Vec2> for f32 {
+    type Output = Vec2;
+    fn mul(self, rhs: Vec2) -> Self::Output {
+        Vec2::new(self * rhs.x, self * rhs.y)
+    }
+}
+impl Div<Vec2> for f32 {
+    type Output = Vec2;
+    fn div(self, rhs: Vec2) -> Self::Output {
+        Vec2::new(self / rhs.x, self / rhs.y)
     }
 }
 
