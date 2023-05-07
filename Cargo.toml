@@ -12,7 +12,7 @@ authors = [
 categories = ["rendering", "api-bindings", "game-engines", "multimedia", "gui"]
 keywords = ["SDL", "gui", "graphics", "superset", "engine"]
 readme = "README.md"
-# repository = "https://github.com/Rust-SDL2/rust-sdl2"
+repository = "https://github.com/DynamicUI/pg_sdl"
 # documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
 
 [lib]
