@@ -2,7 +2,9 @@ mod physics_objects;
 
 use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
+use pg_sdl::widgets::Widgets;
 use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
+use sdl2::sys::wchar_t;
 
 /// My app is the starting point of the application.
 pub struct MyApp {
@@ -28,7 +30,7 @@ impl MyApp {
 }
 
 impl UserApp for MyApp {
-    fn update(&mut self, delta: f32, input: &Input) -> bool {
+    fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
         self.widgets()
             .iter_mut()
             .any(|widget| widget.update(&input, delta));
@@ -132,6 +134,6 @@ fn main() {
         motors: Vec::from([Motor::new(1, 2, 0.4, Colors::LIGHT_GREY)]),
     };
 
-    let mut app: App = App::init("Spring test", 1200, 720, Some(90), true, Colors::SKY_BLUE);
+    let mut app: App = App::init("Spring test", 1200, 720, None, true, Colors::SKY_BLUE);
     app.run(my_app);
 }
