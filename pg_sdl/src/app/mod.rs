@@ -1,33 +1,20 @@
 use crate::prelude::*;
+use crate::widgets::Widgets;
 use sdl2::{pixels::Color, render::Canvas, ttf::FontStyle, video::Window};
+use std::collections::HashMap;
 use std::{fmt::format, time::Instant};
 
 pub trait UserApp {
-    fn update(&mut self, delta: f32, input: &Input) -> bool;
+    fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool;
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
-
-// #[cfg(windows)]
-// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
-//     macros::init_fonts!(
-//         "C:/Users/arnol/PycharmProjects/LibTests/venv/Lib/site-packages/kivy/data/fonts",
-//         ["DejaVuSans.ttf", "DejaVuSans.ttf"]
-//     )
-// }
-
-// #[cfg(unix)]
-// pub fn fonts_init() -> (Vec<fontdue::Font>, HashMap<String, usize>) {
-//     macros::init_fonts!(
-//         "/usr/share/fonts/TTF",
-//         ["Vera.ttf", "VeraBd.ttf", "VeraIt.ttf"],
-//     )
-// }
 
 pub struct App {
     pub input: Input,
     pub canvas: Canvas<Window>,
     pub text_drawer: TextDrawer,
     pub background_color: Color,
+    widgets: Widgets,
     fps: Option<u32>,
     draw_fps: bool,
 }
@@ -59,6 +46,7 @@ impl App {
         App {
             text_drawer: TextDrawer::new(canvas.texture_creator()),
             input: Input::new(sdl_context),
+            widgets: Widgets::new(),
             canvas,
             background_color,
             fps,
@@ -76,6 +64,10 @@ impl App {
         self.input.get_events(); // permet au draw de savoir ou placer les widgets la première fois
         fill_background(&mut self.canvas, self.background_color);
         user_app.draw(&mut self.canvas, &mut self.text_drawer);
+        self.widgets
+            .0
+            .iter_mut()
+            .for_each(|(_, widget)| widget.draw(&mut self.canvas, &mut self.text_drawer));
 
         'running: loop {
             // Time control
@@ -88,9 +80,18 @@ impl App {
 
             // Update
             // Draw
-            if user_app.update(frame_time, &self.input) {
+            let changed = self
+                .widgets
+                .0
+                .iter_mut()
+                .any(|(_, widget)| widget.update(&self.input, frame_time));
+            if user_app.update(frame_time, &self.input, &mut self.widgets) || changed {
                 fill_background(&mut self.canvas, self.background_color);
                 user_app.draw(&mut self.canvas, &mut self.text_drawer);
+                self.widgets
+                    .0
+                    .iter_mut()
+                    .for_each(|(_, widget)| widget.draw(&mut self.canvas, &mut self.text_drawer));
             }
 
             // FPS
@@ -118,6 +119,16 @@ impl App {
             }
 
             frame_time = frame_instant.elapsed().as_secs_f32();
+        }
+    }
+
+    pub fn add_widget(&mut self, name: &str, widget: Box<dyn Widget>) {
+        self.widgets.add(name, widget);
+    }
+
+    pub fn add_widgets(&mut self, widgets: HashMap<&str, Box<dyn Widget>>) {
+        for (name, widget) in widgets {
+            self.widgets.add(name, widget);
         }
     }
 }
