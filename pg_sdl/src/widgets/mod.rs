@@ -47,6 +47,10 @@ impl Widgets {
             .get_mut(name)
             .and_then(|w| w.as_mut().downcast_mut::<T>())
     }
+
+    pub fn get_mut_button(&mut self, name: &str) -> &mut Button {
+        self.get_mut(name).unwrap()
+    }
 }
 
 #[macro_export]
