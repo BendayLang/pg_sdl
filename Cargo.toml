@@ -13,7 +13,7 @@ categories = ["rendering", "api-bindings", "game-engines", "multimedia", "gui"]
 keywords = ["SDL", "gui", "graphics", "superset", "engine"]
 readme = "README.md"
 repository = "https://github.com/DynamicUI/pg_sdl"
-documentation = "https://docs.rs/pg_sdl/0.1.0/pg_sdl/"
+documentation = "https://docs.rs/pg_sdl/"
 
 [lib]
 path = "pg_sdl/src/lib.rs"
