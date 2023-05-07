@@ -10,26 +10,63 @@ impl Colors {
     pub const DARK_GREY: Color = Color::RGB(63, 63, 63);
     pub const BLACK: Color = Color::RGB(0, 0, 0);
 
+    pub const DARK_RED: Color = Color::RGB(127, 0, 0);
     pub const RED: Color = Color::RGB(255, 0, 0);
-    pub const RED_ORANGE: Color = Color::RGB(255, 63, 0);
+    pub const LIGHT_RED: Color = Color::RGB(255, 127, 127);
+
+    pub const DARK_ORANGE: Color = Color::RGB(127, 63, 0);
     pub const ORANGE: Color = Color::RGB(255, 127, 0);
+    pub const LIGHT_ORANGE: Color = Color::RGB(255, 191, 127);
+
+    pub const DARK_AMBER: Color = Color::RGB(127, 95, 0);
     pub const AMBER: Color = Color::RGB(255, 191, 0);
+    pub const LIGHT_AMBER: Color = Color::RGB(255, 223, 127);
+
+    pub const DARK_YELLOW: Color = Color::RGB(127, 127, 0);
     pub const YELLOW: Color = Color::RGB(255, 255, 0);
+    pub const LIGHT_YELLOW: Color = Color::RGB(255, 255, 127);
 
+    pub const DARK_CHARTREUSE: Color = Color::RGB(63, 127, 0);
     pub const CHARTREUSE: Color = Color::RGB(127, 255, 0);
-    pub const GREEN: Color = Color::RGB(0, 255, 0);
-    pub const LIME: Color = Color::RGB(0, 255, 127);
-    pub const CYAN: Color = Color::RGB(0, 255, 255);
+    pub const LIGHT_CHARTREUSE: Color = Color::RGB(191, 255, 127);
 
+    pub const DARK_GREEN: Color = Color::RGB(0, 127, 0);
+    pub const GREEN: Color = Color::RGB(0, 255, 0);
+    pub const LIGHT_GREEN: Color = Color::RGB(127, 255, 127);
+
+    pub const DARK_LIME: Color = Color::RGB(0, 127, 63);
+    pub const LIME: Color = Color::RGB(0, 255, 127);
+    pub const LIGHT_LIME: Color = Color::RGB(127, 255, 191);
+
+    pub const DARK_CYAN: Color = Color::RGB(0, 127, 127);
+    pub const CYAN: Color = Color::RGB(0, 255, 255);
+    pub const LIGHT_CYAN: Color = Color::RGB(127, 255, 255);
+
+    pub const DARK_AZURE: Color = Color::RGB(0, 63, 127);
     pub const AZURE: Color = Color::RGB(0, 127, 255);
+    pub const LIGHT_AZURE: Color = Color::RGB(127, 191, 255);
+
+    pub const DARK_BLUE: Color = Color::RGB(0, 0, 127);
     pub const BLUE: Color = Color::RGB(0, 0, 255);
+    pub const LIGHT_BLUE: Color = Color::RGB(127, 127, 255);
+
+    pub const DARK_VIOLET: Color = Color::RGB(63, 0, 127);
     pub const VIOLET: Color = Color::RGB(127, 0, 255);
+    pub const LIGHT_VIOLET: Color = Color::RGB(191, 127, 255);
+
+    pub const DARK_MAGENTA: Color = Color::RGB(127, 0, 127);
     pub const MAGENTA: Color = Color::RGB(255, 0, 255);
+    pub const LIGHT_MAGENTA: Color = Color::RGB(255, 127, 255);
+
+    pub const DARK_PINK: Color = Color::RGB(127, 0, 63);
     pub const PINK: Color = Color::RGB(255, 0, 127);
+    pub const LIGHT_PINK: Color = Color::RGB(255, 127, 191);
 
     pub const SKY_BLUE: Color = Color::RGB(135, 206, 235);
     pub const ROYAL_BLUE: Color = Color::RGB(65, 105, 225);
+
     pub const BEIGE: Color = Color::RGB(255, 240, 200);
+    pub const BROWN: Color = Color::RGB(150, 75, 0);
 }
 
 /// - hue (0-360)

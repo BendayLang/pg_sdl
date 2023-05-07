@@ -4,44 +4,36 @@ use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
 use pg_sdl::widgets::Widgets;
 use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
-use sdl2::sys::wchar_t;
+use std::collections::HashMap;
 
-/// My app is the starting point of the application.
-pub struct MyApp {
-    buttons: Vec<Button>,
-    sliders: Vec<Slider>,
+/// PhysicsApp is a pyhsics engine app made to test any kind of 2D physics.
+pub struct PhysicsApp {
     masses: Vec<Mass>,
     rods: Vec<Rod>,
     springs: Vec<Spring>,
     motors: Vec<Motor>,
 }
-impl MyApp {
-    fn widgets(&mut self) -> Vec<&mut dyn Widget> {
-        self.buttons
-            .iter_mut()
-            .map(|button| button as &mut dyn Widget)
-            .chain(
-                self.sliders
-                    .iter_mut()
-                    .map(|slider| slider as &mut dyn Widget),
-            )
-            .collect()
-    }
-}
 
-impl UserApp for MyApp {
+impl UserApp for PhysicsApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
-        self.widgets()
-            .iter_mut()
-            .any(|widget| widget.update(&input, delta));
-
-        if self.buttons[0].state.is_pressed() {
-            if self.sliders[0].get_value() == 0.0 {
-                self.sliders[0].set_value(1.0);
-                self.buttons[0].set_text("Stop".to_string());
+        if widgets
+            .get_mut::<Button>("play")
+            .unwrap()
+            .state
+            .is_pressed()
+        {
+            if widgets.get::<Slider>("speed").unwrap().get_value() == 0.0 {
+                widgets.get_mut::<Slider>("speed").unwrap().set_value(1.0);
+                widgets
+                    .get_mut::<Button>("play")
+                    .unwrap()
+                    .set_text("Stop".to_string());
             } else {
-                self.sliders[0].set_value(0.0);
-                self.buttons[0].set_text("Start".to_string());
+                widgets.get_mut::<Slider>("speed").unwrap().set_value(0.0);
+                widgets
+                    .get_mut::<Button>("play")
+                    .unwrap()
+                    .set_text("Start".to_string());
             }
         }
 
@@ -62,7 +54,7 @@ impl UserApp for MyApp {
             spring.apply_force(&mut self.masses);
         });
 
-        let delta = delta * self.sliders[0].get_value() * 10.0;
+        let delta = delta * widgets.get_mut::<Slider>("speed").unwrap().get_value() * 10.0;
 
         self.masses.iter_mut().for_each(|mass| mass.update(delta));
         self.motors
@@ -83,11 +75,7 @@ impl UserApp for MyApp {
         true
     }
 
-    fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        self.widgets()
-            .iter()
-            .for_each(|widget| widget.draw(canvas, text_drawer));
-
+    fn draw(&mut self, canvas: &mut Canvas<Window>, _text_drawer_: &mut TextDrawer) {
         self.motors
             .iter()
             .for_each(|motor| motor.draw(canvas, &self.masses));
@@ -102,31 +90,19 @@ impl UserApp for MyApp {
 }
 
 fn main() {
-    let my_app = &mut MyApp {
-        buttons: vec![Button::new(
-            Colors::ORANGE,
-            rect!(300, 35, 120, 50),
-            Some(9),
-            Some(Text::new("Start".to_string(), 16, None)),
-        )],
-        sliders: vec![Slider::new(
-            Colors::ORANGE,
-            rect!(500, 50, 200, 30),
-            Some(20),
-            SliderType::Continuous {
-                default_value: 0.0,
-                display: Some(Box::new(|value| format!("{:.2}", value))),
-            },
-        )],
-
+    let my_app = &mut PhysicsApp {
         masses: Vec::from([
             Mass::new(Vec2::new(0.0, 0.0), 0.0, 0.0, Colors::BLACK, true),
             Mass::new(Vec2::new(600.0, 400.0), 1.0, 20.0, Colors::ORANGE, true),
             Mass::new(Vec2::new(600.0, 450.0), 1.0, 15.0, Colors::ORANGE, true),
             Mass::new(Vec2::new(600.0, 550.0), 5.0, 25.0, Colors::RED, false),
             Mass::new(Vec2::new(800.0, 200.0), 1.0, 20.0, Colors::GREEN, true),
+            Mass::new(Vec2::new(800.0, 650.0), 1.0, 20.0, Colors::MAGENTA, false),
         ]),
-        rods: Vec::from([Rod::new(3, 4, 250.0, 10.0, Colors::YELLOW)]),
+        rods: Vec::from([
+            Rod::new(3, 4, 250.0, 10.0, Colors::BROWN),
+            Rod::new(3, 5, 50.0, 10.0, Colors::BROWN),
+        ]),
         springs: Vec::from([
             Spring::new(0, 0, 1.0, 0.5, 0.0, 20.0, Colors::WHITE),
             Spring::new(2, 3, 0.5, 0.2, 150.0, 40.0, Colors::BEIGE),
@@ -134,6 +110,29 @@ fn main() {
         motors: Vec::from([Motor::new(1, 2, 0.4, Colors::LIGHT_GREY)]),
     };
 
-    let mut app: App = App::init("Spring test", 1200, 720, None, true, Colors::SKY_BLUE);
+    let mut app: App = App::init("Spring test", 1200, 720, Some(60), true, Colors::SKY_BLUE);
+    app.add_widgets(HashMap::from([
+        (
+            "play",
+            Box::new(Button::new(
+                Colors::ORANGE,
+                rect!(300, 35, 120, 50),
+                Some(9),
+                Some(Text::new("Start".to_string(), 18, None)),
+            )) as Box<dyn Widget>,
+        ),
+        (
+            "speed",
+            Box::new(Slider::new(
+                Colors::ORANGE,
+                rect!(500, 50, 200, 30),
+                Some(20),
+                SliderType::Continuous {
+                    default_value: 0.0,
+                    display: Some(Box::new(|value| format!("{:.2}", value))),
+                },
+            )),
+        ),
+    ]));
     app.run(my_app);
 }

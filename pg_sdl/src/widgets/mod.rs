@@ -39,7 +39,7 @@ impl Widgets {
     pub fn get<T: Widget>(&self, name: &str) -> Option<&T> {
         self.0
             .get(name)
-            .and_then(|w| w.as_any().downcast_ref::<T>())
+            .and_then(|w| w.as_ref().downcast_ref::<T>())
     }
 
     pub fn get_mut<T: Widget>(&mut self, name: &str) -> Option<&mut T> {
