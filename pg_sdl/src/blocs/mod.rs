@@ -1,14 +1,10 @@
-use crate::canvas::draw_rect;
-use crate::canvas::fill_rect;
 use crate::rect;
 use crate::text::TextDrawer;
-use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use sdl2::render::{Canvas, Texture, TextureCreator, TextureQuery};
+use sdl2::render::{Canvas, TextureCreator};
 use sdl2::surface::Surface;
 use sdl2::video::{Window, WindowContext};
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::fmt::Display;
 

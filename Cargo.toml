@@ -6,14 +6,14 @@ version = "0.1.0"
 resolver = "2"
 description = "A SDL2-superset library for easy game or application development."
 authors = [
-	"Arnaud Jungo <arnolo.jo@gmail.com>",
-	"Quentin Jungo <quentin.jungo@gmail.com>",
+    "Arnaud Jungo <arnolo.jo@gmail.com>",
+    "Quentin Jungo <quentin.jungo@gmail.com>",
 ]
 categories = ["rendering", "api-bindings", "game-engines", "multimedia", "gui"]
 keywords = ["SDL", "gui", "graphics", "superset", "engine"]
 readme = "README.md"
 repository = "https://github.com/DynamicUI/pg_sdl"
-# documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
+documentation = "https://docs.rs/pg_sdl/0.1.0/pg_sdl/"
 
 [lib]
 path = "pg_sdl/src/lib.rs"
@@ -23,9 +23,9 @@ sdl2 = { version = "0.35.2", features = ["ttf", "gfx"] }
 itertools = "0.10.5"
 as-any = "0.3.0"
 
-#[[bin]]
-#name = "pg_sdl2"
-#path = "examples/spring_test.rs"
+[[bin]]
+name = "pg_sdl2"
+path = "examples/spring_test/main.rs"
 
 # [[example]]
 # name = "basic"

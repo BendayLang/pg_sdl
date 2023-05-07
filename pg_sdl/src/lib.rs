@@ -1,4 +1,5 @@
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code, unused_variables)]
+// #![allow(unused_imports)]
 
 pub mod app;
 pub mod blocs;
@@ -13,7 +14,7 @@ pub mod vector2;
 pub mod widgets;
 
 pub mod prelude {
-    pub use crate::app::{App, UserApp};
+    pub use crate::app::{App, PgSdl};
     pub use crate::blocs::{draw_bloc, set_child, Bloc};
     pub use crate::camera::Camera;
     pub use crate::canvas::{fill_background, fill_rect};

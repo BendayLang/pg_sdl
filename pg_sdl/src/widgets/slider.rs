@@ -3,13 +3,9 @@ use crate::prelude::*;
 use crate::widgets::{HOVER, PUSH};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{Canvas, TextureAccess, TextureCreator, TextureQuery};
-use sdl2::ttf::FontStyle;
-use sdl2::video::{Window, WindowContext};
-use std::fmt::Display;
+use sdl2::render::Canvas;
 
-const SCREEN_WIDTH: u32 = 800;
-const SCREEN_HEIGHT: u32 = 800;
+use sdl2::video::Window;
 
 pub enum Orientation {
     Horizontal,

@@ -1,7 +1,5 @@
 use crate::prelude::*;
 use crate::{
-    canvas::draw_rounded_rect,
-    canvas::fill_rect,
     color::{darker, Colors},
     input::{Input, KeyState},
     text::TextDrawer,

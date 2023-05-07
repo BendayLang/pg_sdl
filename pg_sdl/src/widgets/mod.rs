@@ -7,7 +7,6 @@ use crate::text::TextDrawer;
 use as_any::{AsAny, Downcast};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use std::any::Any;
 use std::collections::HashMap;
 
 pub use button::Button;

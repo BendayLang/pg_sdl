@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use std::collections::HashMap;
 mod text;
 use sdl2::render::TextureQuery;
 use std::path::Path;

@@ -1,25 +1,25 @@
 use crate::prelude::*;
 use crate::widgets::Widgets;
-use sdl2::{pixels::Color, render::Canvas, ttf::FontStyle, video::Window};
+use sdl2::{pixels::Color, render::Canvas, video::Window};
 use std::collections::HashMap;
-use std::{fmt::format, time::Instant};
+use std::time::Instant;
 
-pub trait UserApp {
+pub trait App {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool;
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
 
-pub struct App {
+pub struct PgSdl {
     pub input: Input,
     pub canvas: Canvas<Window>,
     pub text_drawer: TextDrawer,
-    pub background_color: Color,
+    background_color: Color,
     widgets: Widgets,
     fps: Option<u32>,
     draw_fps: bool,
 }
 
-impl App {
+impl PgSdl {
     pub fn init(
         window_title: &str,
         window_width: u32,
@@ -28,7 +28,7 @@ impl App {
         draw_fps: bool,
         background_color: Color,
     ) -> Self {
-        let sdl_context = sdl2::init().unwrap();
+        let sdl_context = sdl2::init().expect("SDL could not be initialized");
 
         let video_subsystem = sdl_context
             .video()
@@ -41,9 +41,12 @@ impl App {
             .build()
             .expect("Window could not be created");
 
-        let canvas = window.into_canvas().build().unwrap();
+        let canvas = window
+            .into_canvas()
+            .build()
+            .expect("Canvas could not be created");
 
-        App {
+        PgSdl {
             text_drawer: TextDrawer::new(canvas.texture_creator()),
             input: Input::new(sdl_context),
             widgets: Widgets::new(),
@@ -56,7 +59,7 @@ impl App {
 
     pub fn run<U>(&mut self, user_app: &mut U)
     where
-        U: UserApp,
+        U: App,
     {
         let mut frame_instant: Instant;
         let mut frame_time: f32 = 0.02;

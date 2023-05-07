@@ -14,7 +14,7 @@ pub struct PhysicsApp {
     motors: Vec<Motor>,
 }
 
-impl UserApp for PhysicsApp {
+impl App for PhysicsApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
         if widgets
             .get_mut::<Button>("play")
@@ -110,7 +110,7 @@ fn main() {
         motors: Vec::from([Motor::new(1, 2, 0.4, Colors::LIGHT_GREY)]),
     };
 
-    let mut app: App = App::init("Spring test", 1200, 720, Some(60), true, Colors::SKY_BLUE);
+    let mut app: PgSdl = PgSdl::init("Spring test", 1200, 720, Some(60), true, Colors::SKY_BLUE);
     app.add_widgets(HashMap::from([
         (
             "play",

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 pub struct MyApp;
 
-impl UserApp for MyApp {
+impl App for MyApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
         if get_button!(widgets, "button").state.is_pressed() {
             println!("Button pressed !");
@@ -20,7 +20,7 @@ impl UserApp for MyApp {
         canvas.set_draw_color(Colors::VIOLET);
         draw_circle(canvas, point!(500, 400), 100, 20);
 
-        canvas.set_draw_color(Colors::RED_ORANGE);
+        canvas.set_draw_color(Colors::LIGHT_RED);
         let width: u32 = 20;
         let rect = rect!(650, 350, 150, 100);
         let rects = (0..width)
@@ -43,38 +43,39 @@ impl UserApp for MyApp {
 fn main() {
     let mut my_app = MyApp;
 
-    let mut app: App = App::init("Benday", 1200, 720, Some(60), true, Colors::SKY_BLUE);
+    let mut pd_sdl: PgSdl = PgSdl::init("Benday", 1200, 720, Some(60), true, Colors::SKY_BLUE);
 
-    app.add_widget(
-        "button",
-        Box::new(Button::new(
-            Colors::ROYAL_BLUE,
-            rect!(500, 500, 200, 100),
-            Some(9),
-            Some(Text::new("Auto !".to_string(), 16, None)),
-        )),
-    )
-    .add_widget(
-        "slider",
-        Box::new(Slider::new(
-            Colors::ROYAL_BLUE,
-            rect!(110, 220, 200, 100),
-            Some(9),
-            SliderType::Continuous {
-                display: None,
-                default_value: 0.5,
-            },
-        )),
-    )
-    .add_widget(
-        "text input",
-        Box::new(TextInput::new(
-            Colors::WHITE,
-            rect!(222, 295, 200, 100),
-            Some(9),
-            Some(Text::new("Auto !".to_string(), 16, None)),
-        )),
-    );
+    pd_sdl
+        .add_widget(
+            "button",
+            Box::new(Button::new(
+                Colors::ROYAL_BLUE,
+                rect!(500, 500, 200, 100),
+                Some(9),
+                Some(Text::new("Auto !".to_string(), 16, None)),
+            )),
+        )
+        .add_widget(
+            "slider",
+            Box::new(Slider::new(
+                Colors::ROYAL_BLUE,
+                rect!(110, 220, 200, 100),
+                Some(9),
+                SliderType::Continuous {
+                    display: None,
+                    default_value: 0.5,
+                },
+            )),
+        )
+        .add_widget(
+            "text input",
+            Box::new(TextInput::new(
+                Colors::WHITE,
+                rect!(222, 295, 200, 100),
+                Some(9),
+                Some(Text::new("Auto !".to_string(), 16, None)),
+            )),
+        );
 
-    app.run(&mut my_app);
+    pd_sdl.run(&mut my_app);
 }
