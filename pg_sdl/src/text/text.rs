@@ -33,3 +33,9 @@ impl Text {
         }
     }
 }
+
+impl Default for Text {
+    fn default() -> Self {
+        Self::new(String::new(), 16, None)
+    }
+}

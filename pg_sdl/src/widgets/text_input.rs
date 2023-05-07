@@ -9,20 +9,31 @@ pub struct TextInput {
     pushed_color: Color,
     rect: Rect,
     corner_radius: Option<u32>,
-    text: Option<Text>,
+    text_style: Text,
+    content: String,
     hovered: bool,
     pub state: KeyState,
 }
 
 impl TextInput {
-    pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>, text: Option<Text>) -> Self {
+    pub fn new(
+        color: Color,
+        rect: Rect,
+        corner_radius: Option<u32>,
+        text_style: Option<Text>,
+    ) -> Self {
         Self {
             color,
             hovered_color: darker(color, HOVER),
             pushed_color: darker(color, PUSH),
             rect,
             corner_radius,
-            text,
+            content: if let Some(text) = &text_style {
+                text.text.clone()
+            } else {
+                String::new()
+            },
+            text_style: text_style.unwrap_or_default(),
             hovered: false,
             state: KeyState::new(),
         }
@@ -50,23 +61,11 @@ impl Widget for TextInput {
 
         if let Some(c) = input.last_char {
             changed = true;
-            if c == '\u{8}' {
-                // backspace
-                if let Some(text) = &mut self.text {
-                    text.text.pop();
-                }
-            } else if c == '\u{1B}' {
-                // escape
-                if let Some(text) = &mut self.text {
-                    text.text.clear();
-                }
-            } else if c == '\u{D}' {
-                // enter
-            } else {
-                if let Some(text) = &mut self.text {
-                    text.text.push(c);
-                }
-            }
+            self.content.push(c);
+        }
+        if input.keys_state.backspace.is_pressed() {
+            changed = true;
+            self.content.pop();
         }
 
         changed
@@ -96,8 +95,16 @@ impl Widget for TextInput {
             fill_rect(canvas, self.rect, None);
         }
 
-        if let Some(text) = &self.text {
-            text_drawer.draw(canvas, point!(self.rect.left(), self.rect.top()), text);
+        if !self.content.is_empty() {
+            text_drawer.draw(
+                canvas,
+                point!(self.rect.left(), self.rect.top()),
+                &Text::new(
+                    self.content.clone(),
+                    self.text_style.font_size,
+                    Some(&self.text_style.font_name),
+                ),
+            );
         }
     }
 }
