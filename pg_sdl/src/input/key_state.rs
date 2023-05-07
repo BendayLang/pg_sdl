@@ -1,25 +1,48 @@
 use sdl2::keyboard::Keycode;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub enum KeyState { Up, Pressed, Down, Released }
+pub enum KeyState {
+    Up,
+    Pressed,
+    Down,
+    Released,
+}
 
 impl KeyState {
-    pub fn new() -> Self { Self::Up }
+    pub fn new() -> Self {
+        Self::Up
+    }
     pub fn update(&mut self) {
         match self {
-            Self::Pressed => { *self = Self::Down; }
-            Self::Released => { *self = Self::Up; }
+            Self::Pressed => {
+                *self = Self::Down;
+            }
+            Self::Released => {
+                *self = Self::Up;
+            }
             _ => {}
         };
     }
 
-    pub fn press(&mut self) { *self = Self::Pressed }
-    pub fn release(&mut self) { *self = Self::Released }
+    pub fn press(&mut self) {
+        *self = Self::Pressed
+    }
+    pub fn release(&mut self) {
+        *self = Self::Released
+    }
 
-    pub fn is_up(&self) -> bool { *self == Self::Up }
-    pub fn is_pressed(&self) -> bool { *self == Self::Pressed }
-    pub fn is_down(&self) -> bool { *self == Self::Down }
-    pub fn is_released(&self) -> bool { *self == Self::Released }
+    pub fn is_up(&self) -> bool {
+        *self == Self::Up
+    }
+    pub fn is_pressed(&self) -> bool {
+        *self == Self::Pressed
+    }
+    pub fn is_down(&self) -> bool {
+        *self == Self::Down
+    }
+    pub fn is_released(&self) -> bool {
+        *self == Self::Released
+    }
 }
 
 #[derive(Debug)]
@@ -172,15 +195,19 @@ impl KeysState {
             Keycode::Num9 => &mut self._9,
             Keycode::Space => &mut self.space,
             Keycode::Return => &mut self.enter,
-            
+
             Keycode::LCtrl => &mut self.space,
             Keycode::RCtrl => &mut self.space,
             _ => todo!("mettre toutes les keys"),
         }
     }
 
-    pub fn press_key(&mut self, keycode: Keycode) { self.get_key(keycode).press(); }
-    pub fn release_key(&mut self, keycode: Keycode) { self.get_key(keycode).release(); }
+    pub fn press_key(&mut self, keycode: Keycode) {
+        self.get_key(keycode).press();
+    }
+    pub fn release_key(&mut self, keycode: Keycode) {
+        self.get_key(keycode).release();
+    }
 
     pub fn as_mut_array(&mut self) -> [&mut KeyState; 48] {
         [

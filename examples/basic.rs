@@ -1,15 +1,16 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 
 use pg_sdl::prelude::*;
+use pg_sdl::widgets::text_input::TextInput;
 use pg_sdl::widgets::Widgets;
+use pg_sdl::{get_button, get_button_mut, get_widget};
 use std::collections::HashMap;
 
 pub struct MyApp;
 
 impl UserApp for MyApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
-        let button = widgets.get_mut::<Button>("button").unwrap();
-        if button.state.is_pressed() {
+        if get_button!(widgets, "button").state.is_pressed() {
             println!("Button pressed !");
         }
         false
@@ -52,31 +53,28 @@ fn main() {
             Some(9),
             Some(Text::new("Auto !".to_string(), 16, None)),
         )),
+    )
+    .add_widget(
+        "slider",
+        Box::new(Slider::new(
+            Colors::ROYAL_BLUE,
+            rect!(110, 220, 200, 100),
+            Some(9),
+            SliderType::Continuous {
+                display: None,
+                default_value: 0.5,
+            },
+        )),
+    )
+    .add_widget(
+        "text input",
+        Box::new(TextInput::new(
+            Colors::WHITE,
+            rect!(222, 295, 200, 100),
+            Some(9),
+            Some(Text::new("Auto !".to_string(), 16, None)),
+        )),
     );
-
-    app.add_widgets(HashMap::from([
-        (
-            "button2",
-            Box::new(Button::new(
-                Colors::ROYAL_BLUE,
-                rect!(0, 0, 200, 100),
-                Some(9),
-                Some(Text::new("Auto !".to_string(), 16, None)),
-            )) as Box<dyn Widget>,
-        ),
-        (
-            "slider",
-            Box::new(Slider::new(
-                Colors::ROYAL_BLUE,
-                rect!(110, 220, 200, 100),
-                Some(9),
-                SliderType::Continuous {
-                    display: None,
-                    default_value: 0.5,
-                },
-            )),
-        ),
-    ]));
 
     app.run(&mut my_app);
 }

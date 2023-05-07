@@ -122,8 +122,9 @@ impl App {
         }
     }
 
-    pub fn add_widget(&mut self, name: &str, widget: Box<dyn Widget>) {
+    pub fn add_widget(&mut self, name: &str, widget: Box<dyn Widget>) -> &mut Self {
         self.widgets.add(name, widget);
+        self
     }
 
     pub fn add_widgets(&mut self, widgets: HashMap<&str, Box<dyn Widget>>) {

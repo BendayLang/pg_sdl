@@ -39,7 +39,7 @@ impl Input {
             match event {
                 Event::Quit { .. } => self.window_closed = true,
                 Event::KeyDown { keycode, .. } => {
-                    if let Some(keycode) = keycode{
+                    if let Some(keycode) = keycode {
                         self.keys_state.press_key(keycode);
                     }
 
@@ -56,10 +56,10 @@ impl Input {
                     }
                 }
                 Event::KeyUp { keycode, .. } => {
-                    if let Some(keycode) = keycode{
+                    if let Some(keycode) = keycode {
                         self.keys_state.release_key(keycode);
                     }
-                },
+                }
                 _ => {}
             }
         }
