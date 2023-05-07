@@ -2,7 +2,7 @@
 name = "pg_sdl"
 license = "MIT"
 edition = "2021"
-version = "0.1.0"
+version = "0.1.1"
 resolver = "2"
 description = "A SDL2-superset library for easy game or application development."
 authors = [
