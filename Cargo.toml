@@ -22,7 +22,7 @@ path = "pg_sdl/src/lib.rs"
 sdl2 = { version = "0.35.2", features = ["ttf", "gfx"] }
 itertools = "0.10.5"
 as-any = "0.3.0"
-
-[[bin]]
-name = "pg_sdl2"
-path = "examples/basic.rs"
+#
+#[[bin]]
+#name = "pg_sdl2"
+#path = "examples/basic.rs"
