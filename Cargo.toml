@@ -11,7 +11,7 @@ authors = [
 ]
 categories = ["rendering", "api-bindings", "game-engines", "multimedia", "gui"]
 keywords = ["SDL", "gui", "graphics", "superset", "engine"]
-# readme = "README.md"
+readme = "README.md"
 # repository = "https://github.com/Rust-SDL2/rust-sdl2"
 # documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
 
@@ -29,6 +29,3 @@ path = "examples/spring_test.rs"
 
 # [[example]]
 # name = "basic"
-
-# [[example]]
-# name = "main"

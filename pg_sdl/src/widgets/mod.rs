@@ -1,5 +1,6 @@
 pub mod button;
 pub mod slider;
+pub mod text_input;
 
 use crate::input::Input;
 use crate::text::TextDrawer;
@@ -47,4 +48,50 @@ impl Widgets {
             .get_mut(name)
             .and_then(|w| w.as_mut().downcast_mut::<T>())
     }
+}
+
+#[macro_export]
+/// Get a widget mutable reference from the widgets hashmap.
+/// And panic if the widget is not found or if the type is not correct.
+macro_rules! get_mut_widget {
+    ($widgets:expr, $name:expr, $type:ty) => {
+        $widgets.get_mut::<$type>($name).unwrap()
+    };
+}
+
+#[macro_export]
+/// Get a widget reference from the widgets hashmap.
+/// And panic if the widget is not found or if the type is not correct.
+macro_rules! get_widget {
+    ($widgets:expr, $name:expr, $type:ty) => {
+        $widgets.get::<$type>($name).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! get_button {
+    ($widgets:expr, $name:expr) => {
+        $widgets.get::<Button>($name).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! get_button_mut {
+    ($widgets:expr, $name:expr) => {
+        $widgets.get_mut::<Button>($name).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! get_slider {
+    ($widgets:expr, $name:expr) => {
+        $widgets.get::<Slider>($name).unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! get_slider_mut {
+    ($widgets:expr, $name:expr) => {
+        $widgets.get_mut::<Slider>($name).unwrap()
+    };
 }
