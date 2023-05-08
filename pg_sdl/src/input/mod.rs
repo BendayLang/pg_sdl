@@ -37,22 +37,20 @@ impl Input {
             use sdl2::event::Event;
             self.mouse.get_event(event.clone());
             match event {
+                Event::TextEditing { text, .. } => {
+                    println!("TextEditing {:?}", text);
+                }
+                Event::TextInput { text, .. } => {
+                    if text.chars().count() == 1 {
+                        self.last_char = text.chars().next();
+                    } else {
+                        panic!("TextInput event with more than one char {:?}", text);
+                    }
+                }
                 Event::Quit { .. } => self.window_closed = true,
                 Event::KeyDown { keycode, .. } => {
                     if let Some(keycode) = keycode {
                         self.keys_state.press_key(keycode);
-                    }
-
-                    // sks(keycode, true);
-
-                    if let Some(keycode) = keycode {
-                        let c = keycode as u8 as char;
-                        if c.is_ascii_alphanumeric()
-                            || c.is_ascii_punctuation()
-                            || c.is_ascii_whitespace()
-                        {
-                            self.last_char = Some(keycode as u8 as char);
-                        }
                     }
                 }
                 Event::KeyUp { keycode, .. } => {

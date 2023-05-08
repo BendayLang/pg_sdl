@@ -7,10 +7,10 @@ use constrains::Constrain;
 use constrains::Rod;
 use force_generators::{ForceGenerator, Motor, Spring};
 use particle::Particle;
-use pg_sdl::get_slider;
 use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
 use pg_sdl::widgets::Widgets;
+//use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
 use std::collections::HashMap;
 
 /// PhysicsApp is a pyhsics engine app made to test any kind of 2D physics.
@@ -23,8 +23,8 @@ pub struct PhysicsApp {
 
 impl App for PhysicsApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
-        if widgets.get_mut_button("play").state.is_pressed() {
-            if get_slider!(widgets, "speed").get_value() == 0.0 {
+        if widgets.get_button("play").state.is_pressed() {
+            if widgets.get_slider("speed").get_value() == 0.0 {
                 widgets.get_mut::<Slider>("speed").unwrap().set_value(1.0);
                 widgets
                     .get_mut::<Button>("play")
@@ -81,7 +81,7 @@ impl App for PhysicsApp {
             self.particles[index].set_velocity(Vec2::ZERO);
         }
 
-        let changed = get_slider!(widgets, "speed").get_value() != 0.0;
+        let changed = widgets.get_slider("speed").get_value() != 0.0;
         changed
     }
 
