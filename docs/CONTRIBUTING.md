@@ -1,18 +1,3 @@
-# TODO
-- [ ] Finish this file
-- [ ] Find a better name ( UiCraby, SteakUi, OnixUi, BendUi, BendayUi )
-- [ ] Port the project to work izi on the web ( https://github.com/tanis2000/rust-sdl2-wasm/tree/master )
-- [ ] Style system
-- [ ] Widget to add:
-  - [ ] Button
-  - [ ] Text input
-  - [ ] Checkbox
-  - [ ] Switch (on/off)
-  - [ ] Dropdown (rolling list)
-  - [ ] Radio button
-  - [ ] Menu (buttons grouped together)
-
-
 # Welcome to PgSdl contributing guide
 
 Thank you for investing your time in contributing to our project! :sparkles:.
@@ -33,7 +18,8 @@ To get an overview of the project, read the [README](README.md). Here are some r
 
 At this stage of developement any idea, piece of code, reviews or other are welcome !
 <br>
-The easiest way to begin is to play with it by installing the [latest version](https://crates.io/crates/pg_sdl).
+The easiest way to begin is to play with it by installing the [latest version](https://crates.io/crates/pg_sdl). 
+And check the [TODOs](./TODO.md)
 
 <!-- Check to see what [types of contributions](/contributing/types-of-contributions.md) we accept before making changes. Some of them don't even require writing a single line of code :sparkles:. -->
 
