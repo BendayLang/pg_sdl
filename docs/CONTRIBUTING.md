@@ -1,6 +1,6 @@
 # TODO
 - [ ] Finish this file
-- [ ] Find a better name
+- [ ] Find a better name ( UiCraby, SteakUi, OnixUi, BendUi, BendayUi )
 - [ ] Port the project to work izi on the web ( https://github.com/tanis2000/rust-sdl2-wasm/tree/master )
 - [ ] Style system
 - [ ] Widget to add:
@@ -30,6 +30,8 @@ To get an overview of the project, read the [README](README.md). Here are some r
 - [Collaborating with pull requests](https://docs.github.com/en/github/collaborating-with-pull-requests)
 
 ## Getting started
+
+At this stage of developement any idea, piece of code, reviews or other are welcome !
 
 TODO: add things to begin with
 
