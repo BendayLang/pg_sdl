@@ -1,28 +1,12 @@
 # Name
 
-A UI kit built with sdl2 in rust. Originally created for the Benday project.
+A GUI librairy kit built on top of sdl2, in rust. Originally created for the Benday project.
 
 ## Usage
 
 ```rust
-use sdl2::event::Event;
-//TODO: Add usage
+//TODO
 ```
-## TODO (in order of importance)
-
-- [ ] Widget to add:
-  - [ ] Button
-  - [ ] Text input
-  - [ ] Checkbox
-  - [ ] Switch (on/off)
-  - [ ] Dropdown (rolling list)
-  - [ ] Radio button
-  - [ ] Menu (buttons grouped together)
-
-- [ ] Add usage
-- [ ] Add examples (more complex than)
-- [ ] Add documentation
-- [ ] Add tests
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](./docs/LICENSE.md) file for details
