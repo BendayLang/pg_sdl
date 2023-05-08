@@ -1,6 +1,6 @@
 # TODO
 - [ ] Finish this file
-- [ ] Find a better name ( UiCraby, SteakUi, OnixUi, BendUi, BendayUi )
+- [ ] Find a better name ( UiCraby, SteakUi, OnixUi, BendUi, BendayUi, Widgac, Mydget )
 - [ ] Port the project to work izi on the web ( https://github.com/tanis2000/rust-sdl2-wasm/tree/master )
 - [ ] Style system
 - [ ] Widget to add:
