@@ -16,9 +16,14 @@ impl App for MyApp {
             changed = true;
             self.draw_circle = false;
         }
-        if widgets.get_button("button").state.is_down() {
+        let button = widgets.get_button("button");
+        if button.state.is_down() {
             self.draw_circle = true;
             changed = true;
+        }
+        let slider = widgets.get_slider("slider");
+        if slider.state.is_down() {
+            println!("Slider value: {}", slider.get_value());
         }
         changed
     }
