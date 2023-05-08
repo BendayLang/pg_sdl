@@ -1,4 +1,4 @@
-# Welcome to PgSdl docs contributing guide
+# Welcome to PgSdl contributing guide
 
 Thank you for investing your time in contributing to our project! :sparkles:.
 
@@ -26,7 +26,7 @@ Check to see what [types of contributions](/contributing/types-of-contributions.
 
 #### Create a new issue
 
-If you spot a problem while using PgSdl, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/github/docs/issues/new/choose).
+If you spot a problem while using PgSdl, [search if an issue already exists](https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-issues-and-pull-requests#search-by-the-title-body-or-comments). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/DynamicUI/pg_sdl/issues/new/choose).
 
 #### Solve an issue
 

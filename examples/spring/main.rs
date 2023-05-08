@@ -3,7 +3,6 @@ mod physics_objects;
 use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
 use pg_sdl::widgets::Widgets;
-use pg_sdl::{get_button_mut, get_slider};
 use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
 use std::collections::HashMap;
 
