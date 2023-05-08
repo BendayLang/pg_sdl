@@ -17,8 +17,8 @@ pub struct PhysicsApp {
 
 impl App for PhysicsApp {
     fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
-        if widgets.get_mut_button("play").state.is_pressed() {
-            if get_slider!(widgets, "speed").get_value() == 0.0 {
+        if widgets.get_button("play").state.is_pressed() {
+            if widgets.get_slider("speed").get_value() == 0.0 {
                 widgets.get_mut::<Slider>("speed").unwrap().set_value(1.0);
                 widgets
                     .get_mut::<Button>("play")

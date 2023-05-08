@@ -48,53 +48,28 @@ impl Widgets {
             .and_then(|w| w.as_mut().downcast_mut::<T>())
     }
 
+    pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
+        for widget in self.0.values() {
+            widget.draw(canvas, text_drawer);
+        }
+    }
+
+    // TODO: remove this and replace with a macro that right all the code for us
+    // and for every widget type
+
     pub fn get_mut_button(&mut self, name: &str) -> &mut Button {
         self.get_mut(name).unwrap()
     }
-}
 
-#[macro_export]
-/// Get a widget mutable reference from the widgets hashmap.
-/// And panic if the widget is not found or if the type is not correct.
-macro_rules! get_mut_widget {
-    ($widgets:expr, $name:expr, $type:ty) => {
-        $widgets.get_mut::<$type>($name).unwrap()
-    };
-}
+    pub fn get_button(&self, name: &str) -> &Button {
+        self.get(name).unwrap()
+    }
 
-#[macro_export]
-/// Get a widget reference from the widgets hashmap.
-/// And panic if the widget is not found or if the type is not correct.
-macro_rules! get_widget {
-    ($widgets:expr, $name:expr, $type:ty) => {
-        $widgets.get::<$type>($name).unwrap()
-    };
-}
+    pub fn get_mut_slider(&mut self, name: &str) -> &mut Slider {
+        self.get_mut(name).unwrap()
+    }
 
-#[macro_export]
-macro_rules! get_button {
-    ($widgets:expr, $name:expr) => {
-        $widgets.get::<Button>($name).unwrap()
-    };
-}
-
-#[macro_export]
-macro_rules! get_button_mut {
-    ($widgets:expr, $name:expr) => {
-        $widgets.get_mut::<Button>($name).unwrap()
-    };
-}
-
-#[macro_export]
-macro_rules! get_slider {
-    ($widgets:expr, $name:expr) => {
-        $widgets.get::<Slider>($name).unwrap()
-    };
-}
-
-#[macro_export]
-macro_rules! get_slider_mut {
-    ($widgets:expr, $name:expr) => {
-        $widgets.get_mut::<Slider>($name).unwrap()
-    };
+    pub fn get_slider(&self, name: &str) -> &Slider {
+        self.get(name).unwrap()
+    }
 }

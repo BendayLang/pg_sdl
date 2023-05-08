@@ -25,7 +25,8 @@ as-any = "0.3.0"
 
 [[bin]]
 name = "pg_sdl2"
-path = "examples/spring/main.rs"
+path = "examples/basic.rs"
+# path = "examples/spring/main.rs"
 
-[[example]]
-name = "basic"
+#[[example]]
+#name = "basic"
