@@ -4,7 +4,19 @@ A GUI librairy / Widget toolkit built on top of sdl2, in rust. Originally create
 
 ## The concept
 
-PgSdl aims to be easy to use and flexible at the same time. It is basically a widget toolkit and a set of high level Sdl2 functions wrapper
+PgSdl aims to be easy to use and flexible at the same time. It is basically a widget toolkit and a set of high level Sdl2 functions wrapper.
+
+### The widgets
+
+The librairy comes with builtins widget that are easy to use with the main loop pattern describe down. Under the hood, all the widget are kept in a hashmap, with the name you give name as key. 
+You can implement any custom widget as long as you impl the `widget` trait. This will allow you to add it to the list of widget. You can also keep them in your app state and use them in the main loop yourself.
+The interesting fallback with this method is that you can't have two mutable references of any widget of that list at the same time (the borrow checker cannot now if you borrowed twice the same widget).
+Putting the widgets in the app, and there update and draw will be call automaticaly.
+
+### The main loop
+
+You create a struct that will hold the state of your app and implement the two functions `fn update(...)` and `fn draw(...)`. In update you have acces to the inputs and all the widgets you add to your app. 
+
 
 ## Usage
 
