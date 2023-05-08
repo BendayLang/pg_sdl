@@ -81,7 +81,7 @@ fn main() {
     pd_sdl.run(&mut my_app);
 }
 ```
-Find the full example (here)[./examples/basic.rs] or run with `cargo run --example basic`
+Find the full example [here](./examples/basic.rs) or run with `cargo run --example basic`
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](./docs/LICENSE.md) file for details
