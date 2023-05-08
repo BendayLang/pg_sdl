@@ -1,3 +1,18 @@
+# TODO
+- [ ] Finish this file
+- [ ] Find a better name
+- [ ] Port the project to work izi on the web ( https://github.com/tanis2000/rust-sdl2-wasm/tree/master )
+- [ ] Style system
+- [ ] Widget to add:
+  - [ ] Button
+  - [ ] Text input
+  - [ ] Checkbox
+  - [ ] Switch (on/off)
+  - [ ] Dropdown (rolling list)
+  - [ ] Radio button
+  - [ ] Menu (buttons grouped together)
+
+
 # Welcome to PgSdl contributing guide
 
 Thank you for investing your time in contributing to our project! :sparkles:.
