@@ -5,7 +5,7 @@
 - [ ] Style system
 - [ ] Widget to add:
   - [ ] Button
-  - [ ] Text input
+  - [ ] Text input (with https://wiki.libsdl.org/SDL2/Tutorials-TextInput)
   - [ ] Checkbox
   - [ ] Switch (on/off)
   - [ ] Dropdown (rolling list)
