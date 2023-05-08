@@ -32,12 +32,10 @@ To get an overview of the project, read the [README](README.md). Here are some r
 ## Getting started
 
 At this stage of developement any idea, piece of code, reviews or other are welcome !
+<br>
+The easiest way to begin is to play with it by installing the [latest version](https://crates.io/crates/pg_sdl).
 
-TODO: add things to begin with
-
-<!-- To navigate our codebase with confidence, see [the introduction to working in the docs repository](/contributing/working-in-docs-repository.md) :confetti_ball:. For more information on how we write our markdown files, see [the GitHub Markdown reference](contributing/content-markup-reference.md).
-
-Check to see what [types of contributions](/contributing/types-of-contributions.md) we accept before making changes. Some of them don't even require writing a single line of code :sparkles:. -->
+<!-- Check to see what [types of contributions](/contributing/types-of-contributions.md) we accept before making changes. Some of them don't even require writing a single line of code :sparkles:. -->
 
 ### Issues
 
