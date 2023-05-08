@@ -198,7 +198,7 @@ impl KeysState {
 
             Keycode::LCtrl => &mut self.space,
             Keycode::RCtrl => &mut self.space,
-            _ => todo!("mettre toutes les keys"),
+            _ => &mut self.space, // TODO finir de completer
         }
     }
 

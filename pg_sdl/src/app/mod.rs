@@ -57,6 +57,39 @@ impl PgSdl {
         }
     }
 
+    fn draw_fps(&mut self, frame_time: f32) {
+        self.canvas.set_draw_color(Color::WHITE);
+        self.canvas
+            .fill_rect(rect!(10.0, 2.0, 120.0, 32.0))
+            .unwrap();
+        self.text_drawer.draw(
+            &mut self.canvas,
+            point!(65.0, 17.0),
+            &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 24, None),
+        );
+    }
+
+    fn draw<U>(&mut self, user_app: &mut U)
+    where
+        U: App,
+    {
+        fill_background(&mut self.canvas, self.background_color);
+        self.widgets.draw(&mut self.canvas, &mut self.text_drawer);
+        user_app.draw(&mut self.canvas, &mut self.text_drawer);
+    }
+
+    fn update<U>(&mut self, user_app: &mut U, frame_time: f32) -> bool
+    where
+        U: App,
+    {
+        let mut changed = false;
+        for (_, widget) in self.widgets.0.iter_mut() {
+            changed |= widget.update(&self.input, frame_time);
+        }
+        changed |= user_app.update(frame_time, &self.input, &mut self.widgets);
+        changed
+    }
+
     pub fn run<U>(&mut self, user_app: &mut U)
     where
         U: App,
@@ -65,12 +98,7 @@ impl PgSdl {
         let mut frame_time: f32 = 0.02;
 
         self.input.get_events(); // permet au draw de savoir ou placer les widgets la première fois
-        fill_background(&mut self.canvas, self.background_color);
-        user_app.draw(&mut self.canvas, &mut self.text_drawer);
-        self.widgets
-            .0
-            .iter_mut()
-            .for_each(|(_, widget)| widget.draw(&mut self.canvas, &mut self.text_drawer));
+        self.draw(user_app);
 
         'running: loop {
             // Time control
@@ -83,31 +111,13 @@ impl PgSdl {
 
             // Update
             // Draw
-            let changed = self
-                .widgets
-                .0
-                .iter_mut()
-                .any(|(_, widget)| widget.update(&self.input, frame_time));
-            if user_app.update(frame_time, &self.input, &mut self.widgets) || changed {
-                fill_background(&mut self.canvas, self.background_color);
-                user_app.draw(&mut self.canvas, &mut self.text_drawer);
-                self.widgets
-                    .0
-                    .iter_mut()
-                    .for_each(|(_, widget)| widget.draw(&mut self.canvas, &mut self.text_drawer));
+            if self.update(user_app, frame_time) {
+                self.draw(user_app);
             }
 
             // FPS
             if self.draw_fps {
-                self.canvas.set_draw_color(Color::WHITE);
-                self.canvas
-                    .fill_rect(rect!(10.0, 2.0, 120.0, 32.0))
-                    .unwrap();
-                self.text_drawer.draw(
-                    &mut self.canvas,
-                    point!(65.0, 17.0),
-                    &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 24, None),
-                );
+                self.draw_fps(frame_time);
             }
 
             // Render to screen
