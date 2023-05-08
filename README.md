@@ -1,6 +1,6 @@
 # Name
 
-A GUI librairy kit built on top of sdl2, in rust. Originally created for the Benday project.
+A GUI librairy / Widget toolkit built on top of sdl2, in rust. Originally created for the Benday project.
 
 ## Usage
 
