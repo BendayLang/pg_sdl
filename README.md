@@ -9,9 +9,10 @@ PgSdl aims to be easy to use and flexible at the same time. It is basically a wi
 ### The widgets
 
 The librairy comes with builtins widget that are easy to use with the main loop pattern describe down. Under the hood, all the widget are kept in a hashmap, with the name you give name as key. 
-You can implement any custom widget as long as you impl the `widget` trait. This will allow you to add it to the list of widget. You can also keep them in your app state and use them in the main loop yourself.
+You can implement any custom widget as long as you impl the `widget` trait. This will allow you to add it to the list of widget. 
 The interesting fallback with this method is that you can't have two mutable references of any widget of that list at the same time (the borrow checker cannot now if you borrowed twice the same widget).
 Putting the widgets in the app, and there update and draw will be call automaticaly.
+You can also keep them in your app state and use them in the main loop yourself.
 
 ### The main loop
 
