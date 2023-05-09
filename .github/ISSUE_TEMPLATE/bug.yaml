@@ -1,0 +1,35 @@
+name: Report a bug
+description: Report a bug in the library.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        You can report a bug in the library. Please be as specific as possible.
+        * Check to make sure someone hasn't already opened a similar [issue](https://github.com/github/docs/issues).
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: This project has a Code of Conduct that all participants are expected to understand and follow.
+      options:
+        - label: I have read and agree to the project's [Code of Conduct](https://github.com/BendayLang/pg_sdl/blob/master/docs/CODE_OF_CONDUCT.md)
+          required: true
+
+  - type: textarea
+    attributes:
+      label: What changes are you suggesting?
+      description: |
+        - Give as much detail as you can to help us understand the change you want to see. 
+        - What is the expected outcome?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Any additional information, configuration, or data that might be necessary to reproduce the issue.
+    validations:
+      required: false
