@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         You can add a suggestion for a new feature or improvement to the library.
-        * Check to make sure someone hasn't already opened a similar [issue](https://github.com/github/docs/issues).
+        * Check to make sure someone hasn't already opened a similar [issue](https://github.com/BendayLang/pg_sdl/issues).
 
   - type: checkboxes
     id: terms

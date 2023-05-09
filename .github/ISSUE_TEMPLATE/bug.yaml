@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         You can report a bug in the library. Please be as specific as possible.
-        * Check to make sure someone hasn't already opened a similar [issue](https://github.com/github/docs/issues).
+        * Check to make sure someone hasn't already opened a similar [issue](https://github.com/BendayLang/pg_sdl/issues).
 
   - type: checkboxes
     id: terms
