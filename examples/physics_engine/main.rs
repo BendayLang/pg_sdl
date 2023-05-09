@@ -2,15 +2,17 @@ mod constrains;
 mod force_generators;
 mod particle;
 
-use crate::force_generators::Gravity;
+use crate::constrains::Fixed;
+use as_any::AsAny;
 use constrains::Constrain;
 use constrains::Rod;
-use force_generators::{ForceGenerator, Motor, Spring};
+use force_generators::{ForceGenerator, Gravity, Motor, Spring};
+use itertools::Itertools;
+use ndarray::{arr2, array, Array2, ArrayBase, Dim, ViewRepr};
 use particle::Particle;
 use pg_sdl::prelude::*;
 use pg_sdl::vector2::Vec2;
 use pg_sdl::widgets::Widgets;
-//use physics_objects::{apply_gravity, Mass, Motor, Rod, Spring};
 use std::collections::HashMap;
 
 /// PhysicsApp is a pyhsics engine app made to test any kind of 2D physics.
@@ -67,7 +69,31 @@ impl App for PhysicsApp {
                 force_generator.apply_forces(&mut self.particles);
             });
         // 3 - Apply constrains
-        // TODO apply constrains
+        // Vector q of the position of the particles [p1x, p1y, p2x, p2y, ...]
+        let mut q = Array2::<f32>::zeros((2 * self.particles.len(), 1));
+        for (index, particle) in self.particles.iter().enumerate() {
+            Vec2 {
+                x: q[[2 * index, 0]],
+                y: q[[2 * index + 1, 0]],
+            } = particle.get_position()
+        }
+        // Vector W of the inverse mass of the particles [1/m1, 1/m1, 1/m2, 1/m2, ...]
+        let mut w = Array2::<f32>::zeros((2 * self.particles.len(), 1));
+        for (index, particle) in self.particles.iter().enumerate() {
+            w[[2 * index, 0]] = 1.0 / particle.get_mass();
+            w[[2 * index + 1, 0]] = 1.0 / particle.get_mass();
+        }
+        // Matrix C of the constrains
+        let mut c = Array2::<f32>::zeros((2 * self.particles.len(), self.constrains.len()));
+        for (index, constrain) in self.constrains.iter().enumerate() {
+            let (i, j) = (0, 0); // constrain.get_particles();
+            c[[2 * i, index]] = 1.0;
+            c[[2 * j, index]] = -1.0;
+            c[[2 * i + 1, index]] = 1.0;
+            c[[2 * j + 1, index]] = -1.0;
+        }
+        println!("c = {}", c);
+
         // 4 - Update particles
         let delta = delta * widgets.get_mut::<Slider>("speed").unwrap().get_value() * 10.0;
         self.particles.iter_mut().for_each(|particle| {
@@ -101,7 +127,6 @@ impl App for PhysicsApp {
 
 fn main() {
     let particles = Vec::from([
-        Particle::new(Vec2::new(0.0, 0.0), 0.0, 0.0, Colors::BLACK, true),
         Particle::new(Vec2::new(600.0, 400.0), 1.0, 20.0, Colors::ORANGE, true),
         Particle::new(Vec2::new(600.0, 450.0), 1.0, 15.0, Colors::ORANGE, true),
         Particle::new(Vec2::new(600.0, 550.0), 5.0, 25.0, Colors::RED, false),
@@ -111,16 +136,16 @@ fn main() {
 
     let my_app = &mut PhysicsApp {
         constrains: Vec::from([
-            Box::new(Rod::new(3, 4, 10.0, Colors::BROWN, &particles)) as Box<dyn Constrain>,
+            Box::new(Fixed::new(0, Colors::DARK_BLUE, &particles)) as Box<dyn Constrain>,
+            Box::new(Rod::new(2, 3, 10.0, Colors::BROWN, &particles)),
             // Rod::new(3, 5, 50.0, 10.0, Colors::BROWN),
         ]),
         particles,
         force_generators: Vec::from([
             Box::new(Gravity::new(Vec2::new_y(9.81))) as Box<dyn ForceGenerator>,
-            Box::new(Motor::new(1, 2, 0.4, Colors::LIGHT_GREY)),
-            Box::new(Spring::new(0, 0, 1.0, 0.5, 0.0, 20.0, Colors::WHITE)),
-            Box::new(Spring::new(2, 3, 0.5, 0.2, 150.0, 40.0, Colors::BEIGE)),
-            Box::new(Spring::new(3, 5, 5.0, 2.0, 50.0, 20.0, Colors::LIGHT_GREEN)),
+            Box::new(Motor::new(0, 1, 0.4, Colors::LIGHT_GREY)),
+            Box::new(Spring::new(1, 2, 0.5, 0.2, 150.0, 40.0, Colors::BEIGE)),
+            Box::new(Spring::new(2, 4, 5.0, 2.0, 50.0, 20.0, Colors::LIGHT_GREEN)),
         ]),
         selected_particle: None,
     };
