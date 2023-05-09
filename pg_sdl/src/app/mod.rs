@@ -35,6 +35,8 @@ impl PgSdl {
             .video()
             .expect("SDL video subsystem could not be initialized");
 
+        video_subsystem.text_input().start();
+
         let window = video_subsystem
             .window(window_title, window_width, window_height)
             .position_centered()

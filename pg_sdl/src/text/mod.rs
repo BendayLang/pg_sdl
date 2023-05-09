@@ -17,14 +17,7 @@ impl TextDrawer {
         }
     }
 
-    pub fn draw(
-        &mut self,
-        canvas: &mut Canvas<Window>,
-        position: Point,
-        text_style: &TextStyle,
-        text: &str,
-        align: Align,
-    ) {
+    fn get_texture(&mut self, text_style: &TextStyle, text: &str) -> sdl2::render::Texture {
         let TextStyle {
             // text,
             font_name: font_path,
@@ -32,8 +25,6 @@ impl TextDrawer {
             font_style,
             color,
         } = text_style;
-
-        // TODO horizontal alignment !!
 
         let mut font: sdl2::ttf::Font = self
             .ttf_context
@@ -49,12 +40,26 @@ impl TextDrawer {
             .map_err(|e| e.to_string())
             .unwrap();
 
-        let texture = self
-            .texture_creator
+        self.texture_creator
             .create_texture_from_surface(&surface)
             .map_err(|e| e.to_string())
-            .unwrap();
+            .unwrap()
+    }
 
+    pub fn text_width(&mut self, text_style: &TextStyle, text: &str) -> u32 {
+        let TextureQuery { width, .. } = self.get_texture(text_style, text).query();
+        width
+    }
+
+    pub fn draw(
+        &mut self,
+        canvas: &mut Canvas<Window>,
+        position: Point,
+        text_style: &TextStyle,
+        text: &str,
+        align: Align,
+    ) {
+        let texture = self.get_texture(text_style, text);
         let TextureQuery { width, height, .. } = texture.query();
         let size = point!(width, height);
 

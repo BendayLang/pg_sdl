@@ -1,7 +1,7 @@
 use pg_sdl::prelude::*;
 
 fn main() {
-    let mut app = PgSdl::init("Text input", 800, 600, Some(60), true, Color::GRAY);
+    let mut app = PgSdl::init("Text input", 800, 600, Some(60), false, Color::GRAY);
     app.add_widget(
         "input",
         Box::new(TextInput::new(

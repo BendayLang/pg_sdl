@@ -33,11 +33,18 @@ pub struct TextInput {
     content: String,
     hovered: bool,
     is_focused: bool,
+    carrot_last_update: f32,
+    carrot_position: usize,
+    carrot_visible: bool,
     pub state: KeyState,
 }
 
 impl TextInput {
     pub fn new(rect: Rect, style: Option<TextInputStyle>, default_text: Option<String>) -> Self {
+        let carrot_position = match default_text {
+            Some(ref text) => text.len(),
+            None => 0,
+        };
         Self {
             rect,
             style: style.unwrap_or_default(),
@@ -45,6 +52,9 @@ impl TextInput {
             hovered: false,
             state: KeyState::new(),
             is_focused: false,
+            carrot_last_update: 0.0,
+            carrot_position,
+            carrot_visible: true,
         }
     }
 }
@@ -54,12 +64,22 @@ impl Widget for TextInput {
         let mut changed = false;
         self.state.update();
 
+        // Carrot blinking
+        self.carrot_last_update += _delta;
+        if self.carrot_last_update > 0.5 {
+            self.carrot_last_update = 0.0;
+            self.carrot_visible = !self.carrot_visible;
+            changed = true;
+        }
+
+        // Mouse hover
         let hovered = self.rect.contains_point(input.mouse.position);
         if hovered != self.hovered {
             self.hovered = hovered;
             changed = true;
         }
 
+        // Mouse click
         if input.mouse.left_button.is_pressed() && self.hovered {
             self.state.press();
             self.is_focused = true;
@@ -73,23 +93,41 @@ impl Widget for TextInput {
             changed = true;
         }
 
-        if !self.is_focused {
-            return changed;
-        }
-
-        if let Some(c) = input.last_char {
-            changed = true;
-            self.content.push(c);
-        }
-        if input.keys_state.backspace.is_pressed() {
-            changed = true;
-            self.content.pop();
+        // Keyboard input
+        if self.is_focused {
+            if let Some(c) = input.last_char {
+                changed = true;
+                self.content.insert(self.carrot_position, c);
+                if self.carrot_position < self.content.len() {
+                    self.carrot_position += 1;
+                }
+            }
+            if input.keys_state.backspace.is_pressed() {
+                changed = true;
+                if self.carrot_position > 0 {
+                    self.content.remove(self.carrot_position - 1);
+                    self.carrot_position -= 1;
+                }
+            }
+            if input.keys_state.left.is_pressed() {
+                changed = true;
+                if self.carrot_position > 0 {
+                    self.carrot_position -= 1;
+                }
+            }
+            if input.keys_state.right.is_pressed() {
+                changed = true;
+                if self.carrot_position < self.content.len() {
+                    self.carrot_position += 1;
+                }
+            }
         }
 
         changed
     }
 
     fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
+        // Box
         let background_color = if self.state.is_pressed() | self.state.is_down() {
             self.style.background_pushed_color
         } else if self.hovered {
@@ -130,6 +168,7 @@ impl Widget for TextInput {
             );
         }
 
+        // Text
         if !self.content.is_empty() {
             text_drawer.draw(
                 canvas,
@@ -141,6 +180,26 @@ impl Widget for TextInput {
                 &self.content,
                 Align::Left,
             );
+        }
+
+        // Carrot
+        if self.is_focused && self.carrot_visible {
+            let carrot_x_position = if self.carrot_position != 0 {
+                text_drawer.text_width(
+                    &self.style.text_style,
+                    &self.content[..self.carrot_position],
+                ) as i32
+            } else {
+                0
+            };
+
+            let carrot_rect = Rect::new(
+                self.rect.left() + 5 + carrot_x_position,
+                self.rect.top() + 5,
+                1,
+                self.rect.height() - 10,
+            );
+            fill_rect(canvas, carrot_rect, Colors::BLACK, None);
         }
     }
 }
