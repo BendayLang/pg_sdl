@@ -23,6 +23,7 @@ impl TextDrawer {
         position: Point,
         text_style: &TextStyle,
         text: &str,
+        align: Align,
     ) {
         let TextStyle {
             // text,
@@ -30,7 +31,6 @@ impl TextDrawer {
             font_size,
             font_style,
             color,
-            h_align,
         } = text_style;
 
         // TODO horizontal alignment !!
@@ -56,13 +56,20 @@ impl TextDrawer {
             .unwrap();
 
         let TextureQuery { width, height, .. } = texture.query();
+        let size = point!(width, height);
 
-        let target = rect!(
-            position.x - (width / 2) as i32,
-            position.y - (height / 2) as i32,
-            width,
-            height
-        );
+        let target_position = match align {
+            Align::TopLeft => position,
+            Align::Top => position - point!(size.x / 2, 0),
+            Align::TopRight => position - point!(size.x, 0),
+            Align::Left => position - point!(0, size.y / 2),
+            Align::Center => position - size / 2,
+            Align::Right => position - point!(size.x, size.y / 2),
+            Align::BottomLeft => position - point!(0, size.y),
+            Align::Bottom => position - point!(size.x / 2, size.y),
+            Align::BottomRight => position - size,
+        };
+        let target = rect!(target_position.x, target_position.y, width, height);
 
         canvas.copy(&texture, None, Some(target)).unwrap();
     }

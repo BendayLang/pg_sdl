@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::widgets::Widgets;
+use sdl2::ttf::FontStyle;
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use std::collections::HashMap;
 use std::time::Instant;
@@ -65,8 +66,9 @@ impl PgSdl {
         self.text_drawer.draw(
             &mut self.canvas,
             point!(65.0, 17.0),
-            &TextStyle::new(24, None),
+            &TextStyle::new(24, None, Color::BLACK, FontStyle::NORMAL),
             &format!("FPS: {0:.0}", 1.0 / delta),
+            Align::Center,
         );
     }
 

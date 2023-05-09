@@ -4,6 +4,7 @@ use crate::widgets::{HOVER, PUSH};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
+use sdl2::ttf::FontStyle;
 
 use sdl2::video::Window;
 
@@ -273,13 +274,25 @@ impl Widget for Slider {
             SliderType::Discrete { snap, display, .. } => {
                 if let Some(format) = display {
                     let text: String = format((self.value * *snap as f32).round() as u32);
-                    text_drawer.draw(canvas, rect.center(), &TextStyle::new(20, None), &text);
+                    text_drawer.draw(
+                        canvas,
+                        rect.center(),
+                        &TextStyle::new(20, None, Color::BLACK, FontStyle::NORMAL),
+                        &text,
+                        Align::Center,
+                    );
                 }
             }
             SliderType::Continuous { display, .. } => {
                 if let Some(format) = display {
                     let text = format(self.value);
-                    text_drawer.draw(canvas, rect.center(), &TextStyle::new(20, None), &text);
+                    text_drawer.draw(
+                        canvas,
+                        rect.center(),
+                        &TextStyle::new(20, None, Color::BLACK, FontStyle::NORMAL),
+                        &text,
+                        Align::Center,
+                    );
                 }
             }
         }

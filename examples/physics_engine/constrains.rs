@@ -108,7 +108,8 @@ impl Fixed {
 }
 impl Constrain for Fixed {
     fn constrain_matrix(&self, particles: &Vec<Particle>) -> Array2<f32> {
-        todo!()
+        let mut matrix = Array2::<f32>::zeros((2, particles.len() * 2));
+        matrix
     }
     fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
         let position = particles[self.particle].get_position();

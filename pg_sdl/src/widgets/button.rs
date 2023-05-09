@@ -19,7 +19,7 @@ pub struct Button {
     pushed_color: Color,
     rect: Rect,
     corner_radius: Option<u16>,
-    text_style: Option<TextStyle>,
+    text_style: TextStyle,
     text: String,
     hovered: bool,
     pub state: KeyState,
@@ -30,7 +30,7 @@ impl Button {
         color: Color,
         rect: Rect,
         corner_radius: Option<u16>,
-        text_style: Option<TextStyle>,
+        text_style: TextStyle,
         text: String,
     ) -> Self {
         Self {
@@ -84,15 +84,12 @@ impl Widget for Button {
         fill_rect(canvas, self.rect, color, self.corner_radius);
         draw_rect(canvas, self.rect, Colors::BLACK, self.corner_radius);
 
-        if let Some(text_style) = &self.text_style {
-            text_drawer.draw(canvas, self.rect.center(), &text_style, &self.text);
-        } else {
-            text_drawer.draw(
-                canvas,
-                self.rect.center(),
-                &TextStyle::default(),
-                &self.text,
-            );
-        }
+        text_drawer.draw(
+            canvas,
+            self.rect.center(),
+            &self.text_style,
+            &self.text,
+            Align::Center,
+        );
     }
 }

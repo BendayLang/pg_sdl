@@ -5,10 +5,8 @@ fn main() {
     app.add_widget(
         "input",
         Box::new(TextInput::new(
-            Some(TextInputStyle {
-                rect: Rect::new(100, 100, 100, 20),
-                ..TextInputStyle::default()
-            }),
+            Rect::new(100, 100, 120, 30),
+            None,
             Some("Hello".to_string()),
         )),
     );
