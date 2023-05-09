@@ -28,11 +28,11 @@ impl ForceGenerator for Gravity {
     fn draw(&self, _canvas: &mut Canvas<Window>, _particles: &Vec<Particle>) {}
 }
 
-/// A spring is a force generator.
+/// A physics_engine is a force generator.
 ///
 /// It attracts or repels 2 particles (end1 and end2), forcing them to maintain a fixed distance.
 ///
-/// The quantities of the spring are:
+/// The quantities of the physics_engine are:
 /// - the **rest length**
 /// - the force constant **k** (N/m)
 /// - the damping **b** (kg/s)
