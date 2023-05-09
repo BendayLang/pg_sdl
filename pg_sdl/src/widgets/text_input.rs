@@ -1,41 +1,40 @@
 use crate::input::KeyState;
 use crate::prelude::*;
-use crate::widgets::{HOVER, PUSH};
-use sdl2::gfx::primitives::DrawRenderer;
+
+pub struct TextInputStyle {
+    pub background_color: Color,
+    pub corner_radius: Option<u16>,
+    pub text_style: TextStyle,
+    pub rect: Rect,
+}
+
+impl Default for TextInputStyle {
+    fn default() -> Self {
+        Self {
+            background_color: Color::WHITE,
+            corner_radius: Some(5),
+            text_style: TextStyle::default(),
+            rect: Rect::new(100, 100, 120, 30),
+        }
+    }
+}
 
 pub struct TextInput {
-    color: Color,
-    hovered_color: Color,
-    pushed_color: Color,
-    rect: Rect,
-    corner_radius: Option<u32>,
-    text_style: Text,
+    style: TextInputStyle,
     content: String,
     hovered: bool,
+    is_focused: bool,
     pub state: KeyState,
 }
 
 impl TextInput {
-    pub fn new(
-        color: Color,
-        rect: Rect,
-        corner_radius: Option<u32>,
-        text_style: Option<Text>,
-    ) -> Self {
+    pub fn new(style: Option<TextInputStyle>, default_text: Option<String>) -> Self {
         Self {
-            color,
-            hovered_color: darker(color, HOVER),
-            pushed_color: darker(color, PUSH),
-            rect,
-            corner_radius,
-            content: if let Some(text) = &text_style {
-                text.text.clone()
-            } else {
-                String::new()
-            },
-            text_style: text_style.unwrap_or_default(),
             hovered: false,
             state: KeyState::new(),
+            style: style.unwrap_or_default(),
+            content: default_text.unwrap_or_default(),
+            is_focused: false,
         }
     }
 }
@@ -45,7 +44,7 @@ impl Widget for TextInput {
         let mut changed = false;
         self.state.update();
 
-        let hovered = self.rect.contains_point(input.mouse.position);
+        let hovered = self.style.rect.contains_point(input.mouse.position);
         if hovered != self.hovered {
             self.hovered = hovered;
             changed = true;
@@ -53,10 +52,16 @@ impl Widget for TextInput {
 
         if self.hovered && input.mouse.left_button.is_pressed() {
             self.state.press();
+            self.is_focused = true;
             changed = true;
         } else if !self.hovered && input.mouse.left_button.is_pressed() {
             self.state.release();
+            self.is_focused = false;
             changed = true;
+        }
+
+        if !self.is_focused {
+            return changed;
         }
 
         if let Some(c) = input.last_char {
@@ -72,38 +77,27 @@ impl Widget for TextInput {
     }
 
     fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        let color = if self.state.is_pressed() {
-            self.pushed_color
+        let color = if !self.is_focused {
+            darker(self.style.background_color, 0.9)
+        } else if self.state.is_pressed() {
+            darker(self.style.background_color, 0.8)
         } else if self.hovered {
-            self.hovered_color
+            darker(self.style.background_color, 0.7)
         } else {
-            self.color
+            self.style.background_color
         };
 
-        if let Some(radius) = self.corner_radius {
-            DrawRenderer::rounded_box(
-                canvas,
-                self.rect.left() as i16,
-                self.rect.top() as i16,
-                self.rect.right() as i16,
-                self.rect.bottom() as i16,
-                radius as i16,
-                color,
-            )
-            .expect("DrawRenderer failed");
-        } else {
-            fill_rect(canvas, self.rect, None);
-        }
+        fill_rect(canvas, self.style.rect, color, self.style.corner_radius);
 
         if !self.content.is_empty() {
             text_drawer.draw(
                 canvas,
-                point!(self.rect.left(), self.rect.top()),
-                &Text::new(
-                    self.content.clone(),
-                    self.text_style.font_size,
-                    Some(&self.text_style.font_name),
+                point!(
+                    self.style.rect.left() + 5,
+                    self.style.rect.height() as i32 / 2 + self.style.rect.top()
                 ),
+                &self.style.text_style,
+                &self.content,
             );
         }
     }

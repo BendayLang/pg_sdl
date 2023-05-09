@@ -2,7 +2,7 @@ use crate::prelude::*;
 mod text;
 use sdl2::render::TextureQuery;
 use std::path::Path;
-pub use text::Text;
+pub use text::TextStyle;
 
 pub struct TextDrawer {
     pub texture_creator: sdl2::render::TextureCreator<sdl2::video::WindowContext>,
@@ -17,14 +17,23 @@ impl TextDrawer {
         }
     }
 
-    pub fn draw(&mut self, canvas: &mut Canvas<Window>, position: Point, text: &Text) {
-        let Text {
-            text,
+    pub fn draw(
+        &mut self,
+        canvas: &mut Canvas<Window>,
+        position: Point,
+        text_style: &TextStyle,
+        text: &str,
+    ) {
+        let TextStyle {
+            // text,
             font_name: font_path,
             font_size,
             font_style,
             color,
-        } = text;
+            h_align,
+        } = text_style;
+
+        // TODO horizontal alignment !!
 
         let mut font: sdl2::ttf::Font = self
             .ttf_context
@@ -35,7 +44,7 @@ impl TextDrawer {
 
         // render a surface, and convert it to a texture bound to the canvas
         let surface = font
-            .render(text.as_str())
+            .render(text)
             .blended(*color)
             .map_err(|e| e.to_string())
             .unwrap();

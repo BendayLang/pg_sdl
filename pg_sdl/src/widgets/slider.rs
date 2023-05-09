@@ -45,8 +45,7 @@ pub struct Slider {
     pushed_thumb_color: Color,
     rect: Rect,
     orientation: Orientation,
-    /// Corner radius of the slider in proportion to it's width (0-0 - 1.0)
-    corner_radius: Option<u32>,
+    corner_radius: Option<u16>,
     hovered: bool,
     pub state: KeyState,
     /// Internal value of the slider (0.0 - 1.0)
@@ -58,7 +57,7 @@ impl Slider {
     pub fn new(
         color: Color,
         rect: Rect,
-        corner_radius: Option<u32>,
+        corner_radius: Option<u16>,
         slider_type: SliderType,
     ) -> Self {
         let orientation = {
@@ -220,31 +219,29 @@ impl Widget for Slider {
             ),
         };
 
-        canvas.set_draw_color(
+        fill_rect(
+            canvas,
+            back_rect,
             if self.hovered | self.state.is_pressed() | self.state.is_down() {
                 self.hovered_back_color
             } else {
                 self.back_color
             },
+            self.corner_radius,
         );
-        fill_rect(canvas, back_rect, self.corner_radius);
-        canvas.set_draw_color(
+
+        fill_rect(
+            canvas,
+            rect,
             if self.hovered | self.state.is_pressed() | self.state.is_down() {
                 self.hovered_color
             } else {
                 self.color
             },
+            self.corner_radius,
         );
-        fill_rect(canvas, rect, self.corner_radius);
 
         // Pad
-        canvas.set_draw_color(if self.state.is_pressed() | self.state.is_down() {
-            self.pushed_thumb_color
-        } else if self.hovered {
-            self.hovered_thumb_color
-        } else {
-            self.thumb_color
-        });
         let rect = match self.orientation {
             Orientation::Horizontal => rect!(
                 self.rect.left() + self.thumb_position() as i32,
@@ -259,19 +256,30 @@ impl Widget for Slider {
                 self.thickness()
             ),
         };
-        fill_rect(canvas, rect, self.corner_radius);
+        fill_rect(
+            canvas,
+            rect,
+            if self.state.is_pressed() | self.state.is_down() {
+                self.pushed_thumb_color
+            } else if self.hovered {
+                self.hovered_thumb_color
+            } else {
+                self.thumb_color
+            },
+            self.corner_radius,
+        );
 
         match &self.slider_type {
             SliderType::Discrete { snap, display, .. } => {
                 if let Some(format) = display {
-                    let text = format((self.value * *snap as f32).round() as u32);
-                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20, None));
+                    let text: String = format((self.value * *snap as f32).round() as u32);
+                    text_drawer.draw(canvas, rect.center(), &TextStyle::new(20, None), &text);
                 }
             }
             SliderType::Continuous { display, .. } => {
                 if let Some(format) = display {
                     let text = format(self.value);
-                    text_drawer.draw(canvas, rect.center(), &Text::new(text, 20, None));
+                    text_drawer.draw(canvas, rect.center(), &TextStyle::new(20, None), &text);
                 }
             }
         }

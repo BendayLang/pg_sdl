@@ -125,20 +125,6 @@ pub fn draw_bloc<'a>(
         )
         .unwrap();
 
-    /*
-    DrawRenderer::rounded_box(
-        &mut surface,
-        0,
-        0,
-        bloc.rect.width() as i16,
-        bloc.rect.height() as i16,
-        5,
-        bloc.color,
-    )
-    .map_err(|e| e.to_string())
-    .unwrap();
-     */
-
     if let Some(child_id) = bloc.child {
         let bloc = blocs.get(&child_id).unwrap();
         let child_surface = draw_bloc(bloc, blocs, canvas, text_drawer, texture_creator);

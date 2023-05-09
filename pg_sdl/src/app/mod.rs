@@ -57,7 +57,7 @@ impl PgSdl {
         }
     }
 
-    fn draw_fps(&mut self, frame_time: f32) {
+    fn draw_fps(&mut self, delta: f32) {
         self.canvas.set_draw_color(Color::WHITE);
         self.canvas
             .fill_rect(rect!(10.0, 2.0, 120.0, 32.0))
@@ -65,7 +65,8 @@ impl PgSdl {
         self.text_drawer.draw(
             &mut self.canvas,
             point!(65.0, 17.0),
-            &Text::new(format!("FPS: {0:.0}", 1.0 / frame_time), 24, None),
+            &TextStyle::new(24, None),
+            &format!("FPS: {0:.0}", 1.0 / delta),
         );
     }
 
@@ -78,15 +79,12 @@ impl PgSdl {
         user_app.draw(&mut self.canvas, &mut self.text_drawer);
     }
 
-    fn update<U>(&mut self, user_app: &mut U, frame_time: f32) -> bool
+    fn update<U>(&mut self, user_app: &mut U, delta: f32) -> bool
     where
         U: App,
     {
-        let mut changed = false;
-        for (_, widget) in self.widgets.0.iter_mut() {
-            changed |= widget.update(&self.input, frame_time);
-        }
-        changed |= user_app.update(frame_time, &self.input, &mut self.widgets);
+        let mut changed = self.widgets.update(&self.input, delta);
+        changed |= user_app.update(delta, &self.input, &mut self.widgets);
         changed
     }
 

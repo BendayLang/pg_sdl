@@ -133,7 +133,8 @@ fn main() {
                 Colors::ORANGE,
                 rect!(300, 35, 120, 50),
                 Some(9),
-                Some(Text::new("Start".to_string(), 18, None)),
+                Some(TextStyle::new(18, None)),
+                "Start".to_string(),
             )) as Box<dyn Widget>,
         ),
         (

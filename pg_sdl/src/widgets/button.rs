@@ -1,3 +1,4 @@
+use crate::canvas::draw_rect;
 use crate::prelude::*;
 use crate::{
     color::{darker, Colors},
@@ -6,7 +7,6 @@ use crate::{
     widgets::Widget,
     widgets::{HOVER, PUSH},
 };
-use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
@@ -18,31 +18,35 @@ pub struct Button {
     hovered_color: Color,
     pushed_color: Color,
     rect: Rect,
-    corner_radius: Option<u32>,
-    text: Option<Text>,
+    corner_radius: Option<u16>,
+    text_style: Option<TextStyle>,
+    text: String,
     hovered: bool,
     pub state: KeyState,
 }
 
 impl Button {
-    pub fn new(color: Color, rect: Rect, corner_radius: Option<u32>, text: Option<Text>) -> Self {
+    pub fn new(
+        color: Color,
+        rect: Rect,
+        corner_radius: Option<u16>,
+        text_style: Option<TextStyle>,
+        text: String,
+    ) -> Self {
         Self {
             color,
             hovered_color: darker(color, HOVER),
             pushed_color: darker(color, PUSH),
             rect,
             corner_radius,
+            text_style,
             text,
             hovered: false,
             state: KeyState::new(),
         }
     }
     pub fn set_text(&mut self, new_text: String) {
-        if let Some(text) = &mut self.text {
-            text.text = new_text;
-        } else {
-            panic!("Button has no text")
-        }
+        self.text = new_text;
     }
 }
 
@@ -77,36 +81,18 @@ impl Widget for Button {
             self.color
         };
 
-        if let Some(radius) = self.corner_radius {
-            DrawRenderer::rounded_box(
-                canvas,
-                self.rect.left() as i16,
-                self.rect.top() as i16,
-                self.rect.right() as i16,
-                self.rect.bottom() as i16,
-                radius as i16,
-                color,
-            )
-            .expect("DrawRenderer failed");
-            DrawRenderer::rounded_rectangle(
-                canvas,
-                self.rect.left() as i16,
-                self.rect.top() as i16,
-                self.rect.right() as i16,
-                self.rect.bottom() as i16,
-                radius as i16,
-                Colors::BLACK,
-            )
-            .expect("DrawRenderer failed");
-        } else {
-            canvas.set_draw_color(color);
-            canvas.fill_rect(self.rect).unwrap();
-            canvas.set_draw_color(Colors::BLACK);
-            canvas.draw_rect(self.rect).unwrap();
-        }
+        fill_rect(canvas, self.rect, color, self.corner_radius);
+        draw_rect(canvas, self.rect, Colors::BLACK, self.corner_radius);
 
-        if let Some(text) = &self.text {
-            text_drawer.draw(canvas, self.rect.center(), &text);
+        if let Some(text_style) = &self.text_style {
+            text_drawer.draw(canvas, self.rect.center(), &text_style, &self.text);
+        } else {
+            text_drawer.draw(
+                canvas,
+                self.rect.center(),
+                &TextStyle::default(),
+                &self.text,
+            );
         }
     }
 }

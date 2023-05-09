@@ -13,6 +13,7 @@ pub use button::Button;
 pub use slider::Orientation;
 pub use slider::Slider;
 pub use slider::SliderType;
+pub use text_input::{TextInput, TextInputStyle};
 
 const HOVER: f32 = 0.94;
 const PUSH: f32 = 0.80;
@@ -25,7 +26,7 @@ pub trait Widget: AsAny {
     fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
 }
 
-pub struct Widgets(pub HashMap<String, Box<dyn Widget>>);
+pub struct Widgets(HashMap<String, Box<dyn Widget>>);
 
 impl Widgets {
     pub fn new() -> Self {
@@ -52,6 +53,14 @@ impl Widgets {
         for widget in self.0.values() {
             widget.draw(canvas, text_drawer);
         }
+    }
+
+    pub fn update(&mut self, input: &Input, delta: f32) -> bool {
+        let mut redraw = false;
+        for widget in self.0.values_mut() {
+            redraw |= widget.update(input, delta);
+        }
+        redraw
     }
 
     // TODO: remove this and replace with a macro that right all the code for us

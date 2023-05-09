@@ -71,7 +71,7 @@ fn main() {
                 Colors::ROYAL_BLUE,
                 rect!(500, 500, 200, 100),
                 Some(9),
-                Some(Text::new("Auto !".to_string(), 16, None)),
+                Some(TextStyle::new("Auto !".to_string(), 16, None)),
             )),
         )
         .add_widget(
@@ -92,7 +92,7 @@ fn main() {
                 Colors::WHITE,
                 rect!(222, 295, 200, 100),
                 Some(9),
-                Some(Text::new("Auto !".to_string(), 16, None)),
+                Some(TextStyle::new("Auto !".to_string(), 16, None)),
             )),
         );
 
