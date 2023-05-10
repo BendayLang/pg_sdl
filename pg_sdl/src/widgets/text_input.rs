@@ -37,6 +37,8 @@ pub struct TextInput {
     carrot_last_update: f32,
     carrot_position: usize,
     carrot_visible: bool,
+    selection: Option<(usize, usize)>,
+    is_selecting: bool,
     pub state: KeyState,
 }
 
@@ -56,12 +58,14 @@ impl TextInput {
             carrot_last_update: 0.0,
             carrot_position,
             carrot_visible: true,
+            selection: None,
+            is_selecting: false,
         }
     }
 }
 
 impl Widget for TextInput {
-    fn update(&mut self, input: &Input, _delta: f32) -> bool {
+    fn update(&mut self, input: &Input, _delta: f32, text_drawer: &mut TextDrawer) -> bool {
         let mut changed = false;
         self.state.update();
 
@@ -79,13 +83,38 @@ impl Widget for TextInput {
             self.hovered = hovered;
             changed = true;
         }
+        if hovered {
+            // Mouse click
+            if input.mouse.left_button.is_pressed() {
+                let mouse_x = input.mouse.position.x - self.rect.x;
+                let mouse_y = input.mouse.position.y - self.rect.y;
+                let mut min_distance = std::i32::MAX;
+                let mut new_carrot_position = 0;
+                for (i, c) in self.content.chars().enumerate() {
+                    let text = &self.content[..i];
+                    let (h, w) = text_drawer.text_size(&self.style.text_style, &text);
+                    let distance = (w as i32 - mouse_x).abs();
 
-        // Mouse click
-        if input.mouse.left_button.is_pressed() && self.hovered {
-            self.state.press();
-            self.is_focused = true;
+                    if distance < min_distance {
+                        min_distance = distance;
+                        new_carrot_position = i;
+                    }
+                }
+                self.carrot_position = new_carrot_position;
+
+                self.state.press();
+                self.is_focused = true;
+                self.is_selecting = true;
+                changed = true;
+            }
+        }
+
+        if self.is_selecting && input.mouse.left_button.is_released() {
+            self.is_selecting = false;
             changed = true;
-        } else if input.mouse.left_button.is_pressed() && !self.hovered {
+        }
+
+        if input.mouse.left_button.is_pressed() && !self.hovered {
             self.state.release();
             self.is_focused = false;
             changed = true;
@@ -208,10 +237,12 @@ impl Widget for TextInput {
         // Carrot
         if self.is_focused && self.carrot_visible {
             let carrot_x_position = if self.carrot_position != 0 {
-                text_drawer.text_width(
-                    &self.style.text_style,
-                    &self.content[..self.carrot_position],
-                ) as i32
+                text_drawer
+                    .text_size(
+                        &self.style.text_style,
+                        &self.content[..self.carrot_position],
+                    )
+                    .1 as i32
             } else {
                 0
             };

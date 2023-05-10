@@ -87,7 +87,9 @@ impl PgSdl {
     where
         U: App,
     {
-        let mut changed = self.widgets.update(&self.input, delta);
+        let mut changed = self
+            .widgets
+            .update(&self.input, delta, &mut self.text_drawer);
         changed |= user_app.update(delta, &self.input, &mut self.widgets);
         changed
     }

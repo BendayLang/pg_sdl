@@ -138,7 +138,7 @@ impl Slider {
 }
 
 impl Widget for Slider {
-    fn update(&mut self, input: &Input, _delta: f32) -> bool {
+    fn update(&mut self, input: &Input, _delta: f32, _text_drawer: &mut TextDrawer) -> bool {
         let mut changed = false;
         self.state.update();
 
