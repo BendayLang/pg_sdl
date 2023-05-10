@@ -1,7 +1,8 @@
 use crate::canvas::draw_rect;
-use crate::input::KeyState;
+use crate::input::{KeyState, KeysState, Shortcut};
 use crate::prelude::*;
 use crate::widgets::{HOVER, PUSH};
+use sdl2::keyboard::Keycode;
 
 pub struct TextInputStyle {
     background_color: Color,
@@ -95,6 +96,26 @@ impl Widget for TextInput {
 
         // Keyboard input
         if self.is_focused {
+            // Clipboard
+            if input.shortcut_pressed(&Shortcut::PASTE()) && input.clipboard.has_clipboard_text() {
+                let clipboard_text = input.clipboard.clipboard_text().unwrap();
+                self.content
+                    .insert_str(self.carrot_position, &clipboard_text);
+                self.carrot_position = self.carrot_position + clipboard_text.len();
+                return true;
+            }
+            if input.shortcut_pressed(&Shortcut::COPY()) {
+                input.clipboard.set_clipboard_text(&self.content).unwrap();
+                return true;
+            }
+            if input.shortcut_pressed(&Shortcut::CUT()) {
+                input.clipboard.set_clipboard_text(&self.content).unwrap();
+                self.content.clear();
+                self.carrot_position = 0;
+                return true;
+            }
+
+            // Text input
             if let Some(c) = input.last_char {
                 changed = true;
                 self.content.insert(self.carrot_position, c);
@@ -109,6 +130,8 @@ impl Widget for TextInput {
                     self.carrot_position -= 1;
                 }
             }
+
+            // Carrot movement
             if input.keys_state.left.is_pressed() {
                 changed = true;
                 if self.carrot_position > 0 {

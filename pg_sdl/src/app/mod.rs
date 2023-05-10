@@ -51,7 +51,7 @@ impl PgSdl {
 
         PgSdl {
             text_drawer: TextDrawer::new(canvas.texture_creator()),
-            input: Input::new(sdl_context),
+            input: Input::new(sdl_context, video_subsystem.clipboard()),
             widgets: Widgets::new(),
             canvas,
             background_color,

@@ -71,6 +71,8 @@ pub struct KeysState {
     pub v: KeyState,
     pub w: KeyState,
     pub x: KeyState,
+    pub y: KeyState,
+    pub z: KeyState,
     pub up: KeyState,
     pub down: KeyState,
     pub left: KeyState,
@@ -90,11 +92,17 @@ pub struct KeysState {
     pub mouse_left: KeyState,
     pub mouse_right: KeyState,
     pub mouse_middle: KeyState,
-    pub shift: KeyState,
-    pub ctrl: KeyState,
-    pub alt: KeyState,
     pub escape: KeyState,
     pub backspace: KeyState,
+    pub lctrl: KeyState,
+    pub rctrl: KeyState,
+    pub tab: KeyState,
+    pub lshift: KeyState,
+    pub rshift: KeyState,
+    pub lalt: KeyState,
+    pub ralt: KeyState,
+    pub lgui: KeyState,
+    pub rgui: KeyState,
 }
 
 impl KeysState {
@@ -124,6 +132,8 @@ impl KeysState {
             v: KeyState::new(),
             w: KeyState::new(),
             x: KeyState::new(),
+            y: KeyState::new(),
+            z: KeyState::new(),
             up: KeyState::new(),
             down: KeyState::new(),
             left: KeyState::new(),
@@ -143,15 +153,80 @@ impl KeysState {
             mouse_left: KeyState::new(),
             mouse_right: KeyState::new(),
             mouse_middle: KeyState::new(),
-            shift: KeyState::new(),
-            ctrl: KeyState::new(),
-            alt: KeyState::new(),
             escape: KeyState::new(),
             backspace: KeyState::new(),
+            lctrl: KeyState::new(),
+            rctrl: KeyState::new(),
+            tab: KeyState::new(),
+            lshift: KeyState::new(),
+            rshift: KeyState::new(),
+            lalt: KeyState::new(),
+            ralt: KeyState::new(),
+            lgui: KeyState::new(),
+            rgui: KeyState::new(),
         }
     }
 
-    fn get_key(&mut self, keycode: Keycode) -> &mut KeyState {
+    pub fn get_key(&self, keycode: Keycode) -> &KeyState {
+        match keycode {
+            Keycode::Backspace => &self.backspace,
+            Keycode::A => &self.a,
+            Keycode::B => &self.b,
+            Keycode::C => &self.c,
+            Keycode::D => &self.d,
+            Keycode::E => &self.e,
+            Keycode::F => &self.f,
+            Keycode::G => &self.g,
+            Keycode::H => &self.h,
+            Keycode::I => &self.i,
+            Keycode::J => &self.j,
+            Keycode::K => &self.k,
+            Keycode::L => &self.l,
+            Keycode::M => &self.m,
+            Keycode::N => &self.n,
+            Keycode::O => &self.o,
+            Keycode::P => &self.p,
+            Keycode::Q => &self.q,
+            Keycode::R => &self.r,
+            Keycode::S => &self.s,
+            Keycode::T => &self.t,
+            Keycode::U => &self.u,
+            Keycode::V => &self.v,
+            Keycode::W => &self.w,
+            Keycode::X => &self.x,
+            Keycode::Y => &self.y,
+            Keycode::Z => &self.z,
+            Keycode::Up => &self.up,
+            Keycode::Down => &self.down,
+            Keycode::Left => &self.left,
+            Keycode::Right => &self.right,
+            Keycode::Num0 => &self._0,
+            Keycode::Num1 => &self._1,
+            Keycode::Num2 => &self._2,
+            Keycode::Num3 => &self._3,
+            Keycode::Num4 => &self._4,
+            Keycode::Num5 => &self._5,
+            Keycode::Num6 => &self._6,
+            Keycode::Num7 => &self._7,
+            Keycode::Num8 => &self._8,
+            Keycode::Num9 => &self._9,
+            Keycode::Space => &self.space,
+            Keycode::Return => &self.enter,
+            Keycode::LShift => &self.lshift,
+            Keycode::RShift => &self.rshift,
+            Keycode::LCtrl => &self.lctrl,
+            Keycode::RCtrl => &self.rctrl,
+            Keycode::LAlt => &self.lalt,
+            Keycode::RAlt => &self.ralt,
+            Keycode::Escape => &self.escape,
+            Keycode::Tab => &self.tab,
+            Keycode::LGui => &self.lgui,
+            Keycode::RGui => &self.rgui,
+            _ => todo!("Keycode {:?} not implemented", keycode),
+        }
+    }
+
+    fn get_key_mut(&mut self, keycode: Keycode) -> &mut KeyState {
         match keycode {
             Keycode::Backspace => &mut self.backspace,
             Keycode::A => &mut self.a,
@@ -195,21 +270,28 @@ impl KeysState {
             Keycode::Num9 => &mut self._9,
             Keycode::Space => &mut self.space,
             Keycode::Return => &mut self.enter,
-
-            Keycode::LCtrl => &mut self.space,
-            Keycode::RCtrl => &mut self.space,
-            _ => &mut self.space, // TODO finir de completer
+            Keycode::LCtrl => &mut self.lctrl,
+            Keycode::RCtrl => &mut self.rctrl,
+            Keycode::LShift => &mut self.lshift,
+            Keycode::RShift => &mut self.rshift,
+            Keycode::LAlt => &mut self.lalt,
+            Keycode::RAlt => &mut self.ralt,
+            Keycode::Tab => &mut self.tab,
+            Keycode::LGui => &mut self.lgui,
+            Keycode::RGui => &mut self.rgui,
+            _ => todo!("Keycode {:?} not implemented", keycode),
         }
     }
 
     pub fn press_key(&mut self, keycode: Keycode) {
-        self.get_key(keycode).press();
-    }
-    pub fn release_key(&mut self, keycode: Keycode) {
-        self.get_key(keycode).release();
+        self.get_key_mut(keycode).press();
     }
 
-    pub fn as_mut_array(&mut self) -> [&mut KeyState; 48] {
+    pub fn release_key(&mut self, keycode: Keycode) {
+        self.get_key_mut(keycode).release();
+    }
+
+    pub fn as_mut_array(&mut self) -> [&mut KeyState; 56] {
         [
             &mut self.a,
             &mut self.b,
@@ -235,6 +317,8 @@ impl KeysState {
             &mut self.v,
             &mut self.w,
             &mut self.x,
+            &mut self.y,
+            &mut self.z,
             &mut self.up,
             &mut self.down,
             &mut self.left,
@@ -244,9 +328,6 @@ impl KeysState {
             &mut self.mouse_left,
             &mut self.mouse_right,
             &mut self.mouse_middle,
-            &mut self.shift,
-            &mut self.ctrl,
-            &mut self.alt,
             &mut self.escape,
             &mut self.backspace,
             &mut self._0,
@@ -259,6 +340,49 @@ impl KeysState {
             &mut self._7,
             &mut self._8,
             &mut self._9,
+            &mut self.ralt,
+            &mut self.lalt,
+            &mut self.rctrl,
+            &mut self.lctrl,
+            &mut self.rshift,
+            &mut self.lshift,
+            &mut self.tab,
+            &mut self.lgui,
+            &mut self.rgui,
         ]
+    }
+
+    pub fn shortcut_pressed(&self, shortcut: &Shortcut) -> bool {
+        self.get_key(shortcut.key).is_pressed()
+            && shortcut
+                .ctrl_keys
+                .iter()
+                .all(|keys| keys.iter().any(|key| self.get_key(*key).is_down()))
+    }
+}
+
+pub struct Shortcut {
+    ctrl_keys: Vec<Vec<Keycode>>,
+    key: Keycode,
+}
+
+impl Shortcut {
+    pub fn new(ctrl_keys: Vec<Vec<Keycode>>, key: Keycode) -> Self {
+        Self { ctrl_keys, key }
+    }
+
+    #[allow(non_snake_case)]
+    pub fn COPY() -> Self {
+        Self::new(vec![vec![Keycode::LCtrl, Keycode::RCtrl]], Keycode::C)
+    }
+
+    #[allow(non_snake_case)]
+    pub fn PASTE() -> Self {
+        Self::new(vec![vec![Keycode::LCtrl, Keycode::RCtrl]], Keycode::V)
+    }
+
+    #[allow(non_snake_case)]
+    pub fn CUT() -> Self {
+        Self::new(vec![vec![Keycode::LCtrl, Keycode::RCtrl]], Keycode::X)
     }
 }
