@@ -9,10 +9,11 @@ pub enum KeyState {
 }
 
 // TODO suggestion d'un key state permettant d'avoir les double/triple press
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum ChadKeyState {
     Up { released_time: std::time::Instant, last_state: Box<Self> },
     Down { pressed_time: std::time::Instant },
-    Released,
+    Released { last_state: Box<Self> },
     Pressed,
     // TODO: idea: Pressed { n: u8 } // number of time it was pressed consecutively !
     DoublePressed,
@@ -21,14 +22,20 @@ pub enum ChadKeyState {
 
 impl ChadKeyState {
     const TIME_TO_CONSECUTIVE_MS: u128 = 500;
+
     pub fn press(&mut self) {
+        println!("avant {:?}", self);
         *self = match self {
             Self::Pressed => Self::DoublePressed,
             Self::DoublePressed => Self::TriplePressed,
-            Self::Released | Self::TriplePressed | Self::Down { .. } => panic!("Ca peut donc arriver..."),
+            Self::Released { .. } | Self::TriplePressed | Self::Down { .. } => panic!("Ca peut donc arriver... {:?}", self),
             Self::Up { last_state, released_time } => {
-                if released_time.elapsed().as_millis() > Self::TIME_TO_CONSECUTIVE_MS {
+                if released_time.elapsed().as_millis() < Self::TIME_TO_CONSECUTIVE_MS {
                     match last_state.as_ref() {
+                        Self::Released { last_state } => match last_state.as_ref() {
+                            Self::Pressed => Self::DoublePressed,
+                            _ => Self::Pressed,
+                        },
                         Self::Pressed => Self::DoublePressed,
                         Self::DoublePressed => Self::TriplePressed,
                         _ => Self::Pressed,
@@ -37,7 +44,33 @@ impl ChadKeyState {
                     Self::Pressed
                 }
             }
+        };
+        println!("apres {:?}\n", self);
+    }
+
+    pub fn is_up(&self) -> bool {
+        match self {
+            Self::Up { .. } => true,
+            _ => false,
         }
+    }
+    pub fn is_pressed(&self) -> bool {
+        *self == Self::Pressed
+    }
+    pub fn is_down(&self) -> bool {
+        match self {
+            Self::Down { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn is_released(&self) -> bool {
+        match self {
+            Self::Released { .. } => true,
+            _ => false,
+        }
+    }
+    pub fn is_double_pressed(&self) -> bool {
+        *self == Self::DoublePressed
     }
 }
 

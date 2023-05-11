@@ -206,6 +206,11 @@ impl Widget for TextInput {
 
             // Text input
             if let Some(c) = input.last_char {
+                if let Some((start, end)) = self.selection {
+                    self.content.drain(start..end);
+                    self.carrot_position = start;
+                    self.selection = None;
+                }
                 changed = true;
                 self.content.insert(self.carrot_position, c);
                 if self.carrot_position < self.content.len() {
