@@ -8,6 +8,39 @@ pub enum KeyState {
     Released,
 }
 
+// TODO suggestion d'un key state permettant d'avoir les double/triple press
+pub enum ChadKeyState {
+    Up { released_time: std::time::Instant, last_state: Box<Self> },
+    Down { pressed_time: std::time::Instant },
+    Released,
+    Pressed,
+    // TODO: idea: Pressed { n: u8 } // number of time it was pressed consecutively !
+    DoublePressed,
+    TriplePressed,
+}
+
+impl ChadKeyState {
+    const TIME_TO_CONSECUTIVE_MS: u128 = 500;
+    pub fn press(&mut self) {
+        *self = match self {
+            Self::Pressed => Self::DoublePressed,
+            Self::DoublePressed => Self::TriplePressed,
+            Self::Released | Self::TriplePressed | Self::Down { .. } => panic!("Ca peut donc arriver..."),
+            Self::Up { last_state, released_time } => {
+                if released_time.elapsed().as_millis() > Self::TIME_TO_CONSECUTIVE_MS {
+                    match last_state.as_ref() {
+                        Self::Pressed => Self::DoublePressed,
+                        Self::DoublePressed => Self::TriplePressed,
+                        _ => Self::Pressed,
+                    }
+                } else {
+                    Self::Pressed
+                }
+            }
+        }
+    }
+}
+
 impl KeyState {
     pub fn new() -> Self {
         Self::Up
@@ -355,9 +388,9 @@ impl KeysState {
     pub fn shortcut_pressed(&self, shortcut: &Shortcut) -> bool {
         self.get_key(shortcut.key).is_pressed()
             && shortcut
-                .ctrl_keys
-                .iter()
-                .all(|keys| keys.iter().any(|key| self.get_key(*key).is_down()))
+            .ctrl_keys
+            .iter()
+            .all(|keys| keys.iter().any(|key| self.get_key(*key).is_down()))
     }
 }
 

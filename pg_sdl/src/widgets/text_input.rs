@@ -104,7 +104,13 @@ impl Widget for TextInput {
         }
         if hovered {
             // Mouse click
-            if input.mouse.left_button.is_pressed() {
+            if input.mouse.left_button_double_clicked() {
+                self.selection = Some((0, self.content.len()));
+                changed = true;
+            }
+            else if input.mouse.left_button.is_pressed() {
+                self.selection = None;
+
                 // Carrot position
                 let mouse_x = input.mouse.position.x - self.rect.x;
                 self.carrot_position = if let Some(new_carrot_position) =
@@ -138,7 +144,7 @@ impl Widget for TextInput {
                     }
                     changed = true;
                 }
-                println!("Selection: {:?}", self.selection);
+                //println!("Selection: {:?}", self.selection);
             }
         }
 
@@ -207,11 +213,16 @@ impl Widget for TextInput {
                 }
             }
             if input.keys_state.backspace.is_pressed() {
-                changed = true;
-                if self.carrot_position > 0 {
+                if self.selection.is_some() {
+                    let (start, end) = self.selection.unwrap();
+                    self.content.drain(start..end);
+                    self.carrot_position = start;
+                    self.selection = None;
+                } else if self.carrot_position > 0 {
                     self.content.remove(self.carrot_position - 1);
                     self.carrot_position -= 1;
                 }
+                changed = true;
             }
 
             // Carrot movement

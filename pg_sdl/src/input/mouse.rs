@@ -5,6 +5,7 @@ use super::KeyState;
 pub struct Mouse {
     pub position: Point,
     pub delta: Point,
+    left_button_last_release: std::time::Instant,
     pub left_button: KeyState,
     pub right_button: KeyState,
     pub middle_button: KeyState,
@@ -12,6 +13,8 @@ pub struct Mouse {
 }
 
 impl Mouse {
+    const TIME_TO_DOUBLE_CLICK: u128 = 100;
+
     pub fn new() -> Self {
         Mouse {
             position: Point::new(0, 0),
@@ -20,6 +23,7 @@ impl Mouse {
             right_button: KeyState::Up,
             middle_button: KeyState::Up,
             wheel: 0,
+            left_button_last_release: std::time::Instant::now(),
         }
     }
 
@@ -60,7 +64,10 @@ impl Mouse {
                 _ => {}
             },
             Event::MouseButtonUp { mouse_btn, .. } => match mouse_btn {
-                sdl2::mouse::MouseButton::Left => self.left_button = KeyState::Released,
+                sdl2::mouse::MouseButton::Left => {
+                    self.left_button_last_release = std::time::Instant::now();
+                    self.left_button = KeyState::Released
+                }
                 sdl2::mouse::MouseButton::Right => self.right_button = KeyState::Released,
                 sdl2::mouse::MouseButton::Middle => self.middle_button = KeyState::Released,
                 _ => {}
@@ -70,5 +77,9 @@ impl Mouse {
             }
             _ => {}
         }
+    }
+
+    pub fn left_button_double_clicked(&self) -> bool {
+        self.left_button.is_pressed() && self.left_button_last_release.elapsed().as_millis() < Self::TIME_TO_DOUBLE_CLICK
     }
 }
