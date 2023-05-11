@@ -161,6 +161,12 @@ impl Widget for TextInput {
         if self.is_focused {
             // Clipboard
             if input.shortcut_pressed(&Shortcut::PASTE()) && input.clipboard.has_clipboard_text() {
+                if self.selection.is_some() {
+                    let (start, end) = self.selection.unwrap();
+                    self.content.drain(start..end);
+                    self.carrot_position = start;
+                    self.selection = None;
+                }
                 let clipboard_text = input.clipboard.clipboard_text().unwrap();
                 self.content
                     .insert_str(self.carrot_position, &clipboard_text);
@@ -168,10 +174,24 @@ impl Widget for TextInput {
                 return true;
             }
             if input.shortcut_pressed(&Shortcut::COPY()) {
+                if self.selection.is_some() {
+                    let (start, end) = self.selection.unwrap();
+                    let text = self.content[start..end].to_string();
+                    input.clipboard.set_clipboard_text(&text).unwrap();
+                    return true;
+                }
                 input.clipboard.set_clipboard_text(&self.content).unwrap();
                 return true;
             }
             if input.shortcut_pressed(&Shortcut::CUT()) {
+                if self.selection.is_some() {
+                    let (start, end) = self.selection.unwrap();
+                    let text = self.content.drain(start..end).collect::<String>();
+                    input.clipboard.set_clipboard_text(&text).unwrap();
+                    self.carrot_position = start;
+                    self.selection = None;
+                    return true;
+                }
                 input.clipboard.set_clipboard_text(&self.content).unwrap();
                 self.content.clear();
                 self.carrot_position = 0;
@@ -294,8 +314,8 @@ impl Widget for TextInput {
                 self.rect.left()
                     + 5
                     + text_drawer
-                        .text_size(&self.style.text_style, &self.content[..selection.0])
-                        .0 as i32,
+                    .text_size(&self.style.text_style, &self.content[..selection.0])
+                    .0 as i32,
                 self.rect.top() + 5,
                 text_drawer
                     .text_size(
