@@ -62,6 +62,25 @@ impl TextInput {
             is_selecting: false,
         }
     }
+    const LEFT_SHIFT: i32 = 5;
+
+    fn get_carrot_position_from_mouse(
+        &self,
+        text_drawer: &mut TextDrawer,
+        mouse_x: i32,
+    ) -> Option<usize> {
+        let mut x: u32 = 0;
+        for (i, c) in self.content.chars().enumerate() {
+            let text_width = text_drawer
+                .text_size(&self.style.text_style, &c.to_string())
+                .0;
+            x += text_width;
+            if x >= mouse_x as u32 {
+                return Some(i);
+            }
+        }
+        return None;
+    }
 }
 
 impl Widget for TextInput {
@@ -86,26 +105,40 @@ impl Widget for TextInput {
         if hovered {
             // Mouse click
             if input.mouse.left_button.is_pressed() {
+                // Carrot position
                 let mouse_x = input.mouse.position.x - self.rect.x;
-                let mouse_y = input.mouse.position.y - self.rect.y;
-                let mut min_distance = std::i32::MAX;
-                let mut new_carrot_position = 0;
-                for (i, c) in self.content.chars().enumerate() {
-                    let text = &self.content[..i];
-                    let (h, w) = text_drawer.text_size(&self.style.text_style, &text);
-                    let distance = (w as i32 - mouse_x).abs();
+                self.carrot_position = if let Some(new_carrot_position) =
+                    self.get_carrot_position_from_mouse(text_drawer, mouse_x)
+                {
+                    new_carrot_position
+                } else {
+                    self.content.len()
+                };
 
-                    if distance < min_distance {
-                        min_distance = distance;
-                        new_carrot_position = i;
-                    }
-                }
-                self.carrot_position = new_carrot_position;
-
+                // Selection
                 self.state.press();
                 self.is_focused = true;
                 self.is_selecting = true;
                 changed = true;
+            } else if input.mouse.left_button.is_down() && self.is_selecting {
+                // Selection
+                let mouse_x = input.mouse.position.x - self.rect.x;
+                let new_carrot_position = if let Some(new_carrot_position) =
+                    self.get_carrot_position_from_mouse(text_drawer, mouse_x)
+                {
+                    new_carrot_position
+                } else {
+                    self.content.len()
+                };
+                if new_carrot_position != self.carrot_position {
+                    if self.carrot_position > new_carrot_position {
+                        self.selection = Some((new_carrot_position, self.carrot_position));
+                    } else {
+                        self.selection = Some((self.carrot_position, new_carrot_position));
+                    }
+                    changed = true;
+                }
+                println!("Selection: {:?}", self.selection);
             }
         }
 
@@ -117,6 +150,7 @@ impl Widget for TextInput {
         if input.mouse.left_button.is_pressed() && !self.hovered {
             self.state.release();
             self.is_focused = false;
+            self.selection = None;
             changed = true;
         } else if self.state.is_down() && input.mouse.left_button.is_released() {
             self.state.release();
@@ -180,9 +214,7 @@ impl Widget for TextInput {
 
     fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
         // Box
-        let background_color = if self.state.is_pressed() | self.state.is_down() {
-            self.style.background_pushed_color
-        } else if self.hovered {
+        let background_color = if self.hovered {
             self.style.background_hovered_color
         } else {
             self.style.background_color
@@ -225,7 +257,7 @@ impl Widget for TextInput {
             text_drawer.draw(
                 canvas,
                 point!(
-                    self.rect.left() + 5,
+                    self.rect.left() + Self::LEFT_SHIFT,
                     self.rect.height() as i32 / 2 + self.rect.top()
                 ),
                 &self.style.text_style,
@@ -242,7 +274,7 @@ impl Widget for TextInput {
                         &self.style.text_style,
                         &self.content[..self.carrot_position],
                     )
-                    .1 as i32
+                    .0 as i32
             } else {
                 0
             };
@@ -254,6 +286,26 @@ impl Widget for TextInput {
                 self.rect.height() - 10,
             );
             fill_rect(canvas, carrot_rect, Colors::BLACK, None);
+        }
+
+        // Selection
+        if let Some(selection) = self.selection {
+            let selection_rect = Rect::new(
+                self.rect.left()
+                    + 5
+                    + text_drawer
+                        .text_size(&self.style.text_style, &self.content[..selection.0])
+                        .0 as i32,
+                self.rect.top() + 5,
+                text_drawer
+                    .text_size(
+                        &self.style.text_style,
+                        &self.content[selection.0..selection.1],
+                    )
+                    .0 as u32,
+                self.rect.height() - 10,
+            );
+            fill_rect(canvas, selection_rect, Colors::BLUE, None);
         }
     }
 }

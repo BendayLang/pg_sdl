@@ -92,9 +92,12 @@ impl TextDrawer {
         if text.is_empty() {
             return (0, 0);
         }
-        let TextureQuery { width, height, .. } =
-            self.get_texture(text_style, text).unwrap().query();
-        (height, width)
+        let TextureQuery {
+            height: y,
+            width: x,
+            ..
+        } = self.get_texture(text_style, text).unwrap().query();
+        (x, y)
     }
 
     pub fn draw(
