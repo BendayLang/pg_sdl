@@ -35,3 +35,7 @@ name = "basic"
 name = "spring"
 path = "examples/physics_engine/main.rs"
 
+#[[example]]
+#name = "benday"
+#path = "examples/benday/main.rs"
+

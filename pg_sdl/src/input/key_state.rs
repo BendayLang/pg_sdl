@@ -11,41 +11,56 @@ pub enum KeyState {
 // TODO suggestion d'un key state permettant d'avoir les double/triple press
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum ChadKeyState {
-    Up { released_time: std::time::Instant, last_state: Box<Self> },
-    Down { pressed_time: std::time::Instant },
-    Released { last_state: Box<Self> },
+    Up { released_time: std::time::Instant },
+    Down,
+    Released,
     Pressed,
-    // TODO: idea: Pressed { n: u8 } // number of time it was pressed consecutively !
     DoublePressed,
-    TriplePressed,
 }
 
 impl ChadKeyState {
-    const TIME_TO_CONSECUTIVE_MS: u128 = 500;
+    const TIME_TO_CONSECUTIVE_MS: u128 = 100;
+
+    pub fn update(&mut self) {
+        match self {
+            Self::Pressed | Self::DoublePressed => {
+                *self = Self::Down;
+            }
+            Self::Released => {
+                *self = Self::Up {
+                    released_time: std::time::Instant::now(),
+                };
+            }
+            _ => {}
+        };
+    }
 
     pub fn press(&mut self) {
         println!("avant {:?}", self);
         *self = match self {
-            Self::Pressed => Self::DoublePressed,
-            Self::DoublePressed => Self::TriplePressed,
-            Self::Released { .. } | Self::TriplePressed | Self::Down { .. } => panic!("Ca peut donc arriver... {:?}", self),
-            Self::Up { last_state, released_time } => {
+            Self::Up { released_time } => {
                 if released_time.elapsed().as_millis() < Self::TIME_TO_CONSECUTIVE_MS {
-                    match last_state.as_ref() {
-                        Self::Released { last_state } => match last_state.as_ref() {
-                            Self::Pressed => Self::DoublePressed,
-                            _ => Self::Pressed,
-                        },
-                        Self::Pressed => Self::DoublePressed,
-                        Self::DoublePressed => Self::TriplePressed,
-                        _ => Self::Pressed,
-                    }
+                    Self::DoublePressed
                 } else {
                     Self::Pressed
                 }
             }
+            _ => panic!(
+                "Cannot press a key that is not up or released (key is {:?})",
+                self
+            ),
         };
         println!("apres {:?}\n", self);
+    }
+
+    pub fn release(&mut self) {
+        *self = match self {
+            Self::Down => Self::Released,
+            _ => panic!(
+                "Cannot release a key that is not pressed or down (key is {:?})",
+                self
+            ),
+        };
     }
 
     pub fn is_up(&self) -> bool {
@@ -421,9 +436,9 @@ impl KeysState {
     pub fn shortcut_pressed(&self, shortcut: &Shortcut) -> bool {
         self.get_key(shortcut.key).is_pressed()
             && shortcut
-            .ctrl_keys
-            .iter()
-            .all(|keys| keys.iter().any(|key| self.get_key(*key).is_down()))
+                .ctrl_keys
+                .iter()
+                .all(|keys| keys.iter().any(|key| self.get_key(*key).is_down()))
     }
 }
 

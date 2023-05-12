@@ -34,7 +34,7 @@ impl Input {
             key_state.update()
         }
 
-        self.mouse.get_events();
+        self.mouse.update();
 
         for event in self.event_pump.poll_iter() {
             use sdl2::event::Event;

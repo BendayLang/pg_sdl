@@ -1,5 +1,6 @@
-use sdl2::rect::Point;
 use crate::input::key_state::ChadKeyState;
+use sdl2::mouse::MouseButton;
+use sdl2::rect::Point;
 use std::time::Instant;
 
 use super::KeyState;
@@ -7,7 +8,7 @@ use super::KeyState;
 pub struct Mouse {
     pub position: Point,
     pub delta: Point,
-    left_button_last_release: Instant,
+    // left_button_last_release: Instant,
     pub left_button: ChadKeyState,
     pub right_button: KeyState,
     pub middle_button: KeyState,
@@ -21,24 +22,20 @@ impl Mouse {
         Mouse {
             position: Point::new(0, 0),
             delta: Point::new(0, 0),
-            left_button: ChadKeyState::Down { pressed_time: Instant::now() }, // TODO idee de merde ?
+            left_button: ChadKeyState::Up {
+                released_time: Instant::now(),
+            },
             right_button: KeyState::Up,
             middle_button: KeyState::Up,
             wheel: 0,
-            left_button_last_release: Instant::now(),
+            // left_button_last_release: Instant::now(),
         }
     }
 
-    // TODO rename update ???
-    pub fn get_events(&mut self) {
+    pub fn update(&mut self) {
         self.delta = Point::new(0, 0);
         self.wheel = 0;
-
-        self.left_button = match &self.left_button {
-            ChadKeyState::Pressed => ChadKeyState::Down { pressed_time: Instant::now() },
-            ChadKeyState::Released { last_state } => ChadKeyState::Up { released_time: Instant::now(), last_state: Box::new(self.left_button.clone()) },
-            _ => self.left_button.clone()
-        };
+        self.left_button.update();
         self.right_button = match self.right_button {
             KeyState::Pressed => KeyState::Down,
             KeyState::Released => KeyState::Up,
@@ -61,19 +58,16 @@ impl Mouse {
                 self.delta = Point::new(xrel, yrel);
             }
             Event::MouseButtonDown { mouse_btn, .. } => match mouse_btn {
-                sdl2::mouse::MouseButton::Left => self.left_button.press(),
-                sdl2::mouse::MouseButton::Right => self.right_button = KeyState::Pressed,
-                sdl2::mouse::MouseButton::Middle => self.middle_button = KeyState::Pressed,
-                _ => {}
+                MouseButton::Left => self.left_button.press(),
+                MouseButton::Right => self.right_button = KeyState::Pressed,
+                MouseButton::Middle => self.middle_button = KeyState::Pressed,
+                MouseButton::Unknown | MouseButton::X1 | MouseButton::X2 => todo!(),
             },
             Event::MouseButtonUp { mouse_btn, .. } => match mouse_btn {
-                sdl2::mouse::MouseButton::Left => {
-                    self.left_button_last_release = Instant::now();
-                    self.left_button = ChadKeyState::Released { last_state: Box::new(self.left_button.clone()) }
-                }
-                sdl2::mouse::MouseButton::Right => self.right_button = KeyState::Released,
-                sdl2::mouse::MouseButton::Middle => self.middle_button = KeyState::Released,
-                _ => {}
+                MouseButton::Left => self.left_button.release(),
+                MouseButton::Right => self.right_button = KeyState::Released,
+                MouseButton::Middle => self.middle_button = KeyState::Released,
+                MouseButton::Unknown | MouseButton::X1 | MouseButton::X2 => todo!(),
             },
             Event::MouseWheel { y, .. } => {
                 self.wheel = y;
