@@ -3,6 +3,7 @@ mod blocs;
 
 use crate::blocs::{draw_bloc, set_child};
 use blocs::Bloc;
+use pg_sdl::canvas;
 use pg_sdl::prelude::*;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::ttf::FontStyle;
@@ -17,17 +18,11 @@ pub struct MyApp {
     id_counter: u32,
     bloc_state: AppState,
     blocs: HashMap<u32, Bloc>,
-    radius: u32,
 }
 
 impl App for MyApp {
     fn update(&mut self, _delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
         let mut changed = false;
-        if widgets.get_button("Reset").state.is_pressed() {
-            widgets.get_mut_slider("Radius").reset_value();
-            changed = true;
-        }
-        self.radius = 2_u32.pow(widgets.get_slider("Radius").get_value() as u32 + 1);
         match self.bloc_state {
             AppState::Idle => {
                 // Add a bloc
@@ -58,7 +53,8 @@ impl App for MyApp {
                 self.blocs
                     .get_mut(&moving_bloc_id)
                     .unwrap()
-                    .move_by(input.mouse.delta);
+                    .set_position((input.mouse.position.x, input.mouse.position.y));
+                // .move_by(input.mouse.delta);
                 changed |= input.mouse.delta != point!(0, 0);
 
                 if input.mouse.left_button.is_released() {
@@ -92,33 +88,10 @@ impl App for MyApp {
                 }
             }
         }
-
         changed
     }
 
     fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        let rect = (200, 400, 520, 600);
-        DrawRenderer::rounded_box(
-            canvas,
-            rect.0,
-            rect.1,
-            rect.2,
-            rect.3,
-            self.radius as i16,
-            Colors::GREEN,
-        )
-        .expect("DrawRenderer failed");
-        DrawRenderer::rounded_rectangle(
-            canvas,
-            rect.0,
-            rect.1,
-            rect.2,
-            rect.3,
-            self.radius as i16,
-            Colors::BLACK,
-        )
-        .expect("DrawRenderer failed");
-
         let texture_creator = canvas.texture_creator();
         for (_id, bloc) in &self.blocs {
             if bloc.parent != None {
@@ -141,15 +114,6 @@ impl App for MyApp {
                 .collect::<Vec<String>>()
                 .join("\n")
         );
-        // text_drawer.draw(
-        //     canvas,
-        //     &Text::new(text, 12.0),
-        //     point!(130.0, 550.0),
-        //     None,
-        //     None,
-        //     HorizontalAlign::Left,
-        //     VerticalAlign::Top,
-        // );
     }
 }
 
@@ -158,7 +122,6 @@ fn main() {
         id_counter: 0,
         bloc_state: AppState::Idle,
         blocs: HashMap::new(),
-        radius: 0,
     };
 
     let mut app = PgSdl::init("Benday", 1280, 720, Some(60), true, Color::GREY);
@@ -173,28 +136,6 @@ fn main() {
             "New bloc".to_string(),
         )),
     );
-    app.add_widget(
-        "Reset",
-        Box::new(Button::new(
-            Colors::GREY,
-            rect!(550, 20, 80, 50),
-            None,
-            TextStyle::default(),
-            "Reset".to_string(),
-        )),
-    );
-    app.add_widget(
-        "Radius",
-        Box::new(Slider::new(
-            Colors::RED,
-            rect!(500, 200, 150, 18),
-            Some(5),
-            SliderType::Discrete {
-                snap: 6,
-                default_value: 3,
-                display: Some(Box::new(|value| format!("R{}", 2_u32.pow(value + 1)))),
-            },
-        )),
-    );
+
     app.run(my_app);
 }

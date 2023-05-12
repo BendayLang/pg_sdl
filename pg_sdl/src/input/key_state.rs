@@ -8,7 +8,7 @@ pub enum KeyState {
     Released,
 }
 
-// TODO suggestion d'un key state permettant d'avoir les double/triple press
+// TODO suggestion key state avec double press
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum ChadKeyState {
     Up { released_time: std::time::Instant },
@@ -36,7 +36,6 @@ impl ChadKeyState {
     }
 
     pub fn press(&mut self) {
-        println!("avant {:?}", self);
         *self = match self {
             Self::Up { released_time } => {
                 if released_time.elapsed().as_millis() < Self::TIME_TO_CONSECUTIVE_MS {
@@ -45,12 +44,8 @@ impl ChadKeyState {
                     Self::Pressed
                 }
             }
-            _ => panic!(
-                "Cannot press a key that is not up or released (key is {:?})",
-                self
-            ),
+            _ => panic!("Cannot press a key that is not up or released ({:?})", self),
         };
-        println!("apres {:?}\n", self);
     }
 
     pub fn release(&mut self) {
