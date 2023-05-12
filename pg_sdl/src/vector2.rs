@@ -1,8 +1,9 @@
 use std::fmt;
+use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// A 2D vector
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
@@ -59,6 +60,12 @@ impl Vec2 {
     /// Returns the squared length of the vector
     pub fn length_squared(self) -> f32 {
         self.x * self.x + self.y * self.y
+    }
+    /// Sets the length of the vector to 1
+    pub fn normalize(&mut self) {
+        if *self != Self::ZERO {
+            *self /= self.length();
+        }
     }
     /// Returns a vector with the same direction but with length 1
     pub fn normalized(self) -> Self {
@@ -301,3 +308,11 @@ impl From<[f32; 2]> for Vec2 {
         Self::new(x, y)
     }
 }
+
+impl Sum for Vec2 {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::ZERO, |a, b| a + b)
+    }
+}
+
+// Sum <&Vec2> for Vec2

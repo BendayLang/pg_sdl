@@ -337,16 +337,16 @@ impl ForceGenerator for Motor {
         if radius as i16 - w <= 0 {
             return;
         }
-
-        DrawRenderer::filled_circle(
-            canvas,
-            start_position.x as i16,
-            start_position.y as i16,
-            radius as i16 + w,
-            self.color,
-        )
-        .unwrap();
-
+        /*
+                DrawRenderer::filled_circle(
+                    canvas,
+                    start_position.x as i16,
+                    start_position.y as i16,
+                    radius as i16 + w,
+                    self.color,
+                )
+                .unwrap();
+        */
         DrawRenderer::circle(
             canvas,
             start_position.x as i16,

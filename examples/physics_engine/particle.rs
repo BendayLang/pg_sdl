@@ -1,32 +1,32 @@
 use pg_sdl::color::Colors;
 use pg_sdl::vector2::Vec2;
 use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::keyboard::Keycode::V;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-/// A particle is the most basic element of the physics engine.
+#[derive(Debug)]
+/// Particles are objects that have mass, position, velocity, and respond to forces,
 ///
-/// It has a position, a velocity and a mass.
+/// but that have no spatial extent.
 pub struct Particle {
+    mass: f32,
     position: Vec2,
     velocity: Vec2,
-    mass: f32,
+    force_accumulator: Vec<Vec2>,
     radius: f32,
     color: Color,
-    force_accumulator: Vec2,
-    fixed: bool,
 }
 impl Particle {
-    pub fn new(position: Vec2, mass: f32, radius: f32, color: Color, fixed: bool) -> Self {
+    pub fn new(mass: f32, position: Vec2, radius: f32, color: Color) -> Self {
         Self {
+            mass,
             position,
             velocity: Vec2::ZERO,
-            mass,
+            force_accumulator: Vec::new(),
             radius,
             color,
-            force_accumulator: Vec2::ZERO,
-            fixed,
         }
     }
 
@@ -51,10 +51,11 @@ impl Particle {
     }
 
     pub fn apply_force(&mut self, force: Vec2) {
-        if self.fixed {
-            return;
-        }
-        self.force_accumulator += force;
+        self.force_accumulator.push(force);
+    }
+
+    pub fn get_force(&self) -> Vec2 {
+        self.force_accumulator.clone().into_iter().sum()
     }
 
     pub fn collide_point(&self, point: Vec2) -> bool {
@@ -62,18 +63,15 @@ impl Particle {
     }
 
     pub fn update(&mut self, delta: f32) {
-        if self.fixed {
-            return;
-        }
-
+        let force = self.get_force();
         // Euler integration
         // let acceleration = self.force_accumulator / self.mass;
 
         // Runge-Kutta integration
-        let k1 = self.force_accumulator / self.mass;
-        let k2 = (self.force_accumulator + k1 * delta / 2.0) / self.mass;
-        let k3 = (self.force_accumulator + k2 * delta / 2.0) / self.mass;
-        let k4 = (self.force_accumulator + k3 * delta) / self.mass;
+        let k1 = force / self.mass;
+        let k2 = (force + k1 * delta / 2.0) / self.mass;
+        let k3 = (force + k2 * delta / 2.0) / self.mass;
+        let k4 = (force + k3 * delta) / self.mass;
         let acceleration = (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
 
         self.velocity += acceleration * delta;
@@ -81,7 +79,7 @@ impl Particle {
     }
 
     pub fn clear_force_accumulator(&mut self) {
-        self.force_accumulator = Vec2::ZERO;
+        self.force_accumulator.clear();
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>) {
@@ -103,6 +101,52 @@ impl Particle {
             self.radius as i16,
             Colors::BLACK,
         )
-        .unwrap()
+        .unwrap();
     }
+
+    pub fn draw_forces(&self, canvas: &mut Canvas<Window>, scaler: f32) {
+        for (i, force) in self.force_accumulator.iter().enumerate() {
+            let color = if i == self.force_accumulator.len() - 1 {
+                Colors::VIOLET
+            } else {
+                Colors::LIGHT_YELLOW
+            };
+            draw_arrow(
+                canvas,
+                color,
+                self.position,
+                self.position + *force * scaler,
+                8.0,
+            );
+        }
+    }
+}
+
+/// Draw an arrow from start to end with the head at the end.
+fn draw_arrow(canvas: &mut Canvas<Window>, color: Color, start: Vec2, end: Vec2, width: f32) {
+    if start == end {
+        return;
+    }
+    let x_dir = end - start;
+    let y_dir = x_dir.perpendicular() * width / 2.0;
+    let transform = |v: Vec2| start + v.linear_transform(x_dir, y_dir);
+
+    let head_back: f32 = 1.0 - 3.0 * width / x_dir.length();
+
+    let mut points = Vec::from([
+        Vec2::new(head_back, -1.0),
+        Vec2::new(head_back, -3.0),
+        Vec2::new(1.0, 0.0),
+        Vec2::new(head_back, 3.0),
+        Vec2::new(head_back, 1.0),
+    ]);
+    if x_dir.length() > 3.0 * width {
+        points.append(&mut Vec::from([Vec2::new(0.0, 1.0), Vec2::new(0.0, -1.0)]));
+    }
+    points.iter_mut().for_each(|v| *v = transform(*v));
+    let points_x: Vec<i16> = points.iter().map(|v| v.x as i16).collect();
+    let points_y: Vec<i16> = points.iter().map(|v| v.y as i16).collect();
+
+    DrawRenderer::filled_polygon(canvas, &points_x, &points_y, color).unwrap();
+    DrawRenderer::polygon(canvas, &points_x, &points_y, Colors::BLACK).unwrap();
 }
