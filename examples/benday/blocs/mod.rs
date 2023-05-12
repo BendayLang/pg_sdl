@@ -1,5 +1,5 @@
-use crate::rect;
-use crate::text::TextDrawer;
+use pg_sdl::prelude::TextDrawer;
+use pg_sdl::rect;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Canvas, TextureCreator};
