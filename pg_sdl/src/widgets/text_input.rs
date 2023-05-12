@@ -31,7 +31,7 @@ impl Default for TextInputStyle {
 pub struct TextInput {
     rect: Rect,
     style: TextInputStyle,
-    content: String,
+    pub content: String,
     hovered: bool,
     is_focused: bool,
     carrot_last_update: f32,
@@ -107,8 +107,7 @@ impl Widget for TextInput {
             if input.mouse.left_button_double_clicked() {
                 self.selection = Some((0, self.content.len()));
                 changed = true;
-            }
-            else if input.mouse.left_button.is_pressed() {
+            } else if input.mouse.left_button.is_pressed() {
                 self.selection = None;
 
                 // Carrot position
@@ -330,8 +329,8 @@ impl Widget for TextInput {
                 self.rect.left()
                     + 5
                     + text_drawer
-                    .text_size(&self.style.text_style, &self.content[..selection.0])
-                    .0 as i32,
+                        .text_size(&self.style.text_style, &self.content[..selection.0])
+                        .0 as i32,
                 self.rect.top() + 5,
                 text_drawer
                     .text_size(
