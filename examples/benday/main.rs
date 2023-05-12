@@ -1,11 +1,7 @@
 #![allow(dead_code, unused_variables)]
 mod blocs;
-
-use crate::blocs::{draw_bloc, set_child};
-use blocs::Bloc;
-use pg_sdl::canvas;
+use blocs::{draw_bloc, set_child, Bloc};
 use pg_sdl::prelude::*;
-use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::ttf::FontStyle;
 use std::collections::HashMap;
 
@@ -132,7 +128,7 @@ fn main() {
             Colors::ROYAL_BLUE,
             rect!(100, 100, 200, 100),
             Some(9),
-            TextStyle::new(20, None, Color::BLACK, FontStyle::BOLD),
+            TextStyle::new(20, None, Color::BLACK, FontStyle::NORMAL),
             "New bloc".to_string(),
         )),
     );
