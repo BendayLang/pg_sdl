@@ -6,6 +6,7 @@ mod particle;
 use constrains::{Constrain, LengthConstraint, LineConstraint, SlidingConstraint};
 use force_generators::{ForceGenerator, Gravity, Spring};
 use linear_alogithmes::gauss_seidel;
+use nalgebra;
 use ndarray::{Array1, Array2};
 use particle::Particle;
 use pg_sdl::prelude::*;
@@ -260,5 +261,14 @@ fn main() {
 		]),
 		true,
 	);
-	app.run(&mut my_app);
+	// app.run(&mut my_app);
+	let a_vec2 = nalgebra::Vector2::new(10.0, 2.0);
+	let b_matrix2x2 = nalgebra::Matrix2::new(0.0, -1.0, 1.0, 0.0);
+	let c_vec2 = b_matrix2x2 * a_vec2;
+	let length = a_vec2.norm();
+	println!("a_vec2 = {}", a_vec2);
+	println!("b_matrix2x2 = {}", b_matrix2x2);
+	println!("c_vec2 = {}", c_vec2);
+	println!("length = {}", length);
+	// TODO replace Vec2 by nalgebra::Vector2
 }
