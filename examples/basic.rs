@@ -52,13 +52,21 @@ impl App for MyApp {
 			Vector2::new(480.0, 380.0),
 		]
 		.map(|vector| Point2::from(vector));
-		let similarity = self.camera.similarity;
-		let polygon = polygon.map(|point| similarity * point);
 
-		let vx = &polygon.map(|point| point.x as i16);
-		let vy = &polygon.map(|point| point.y as i16);
+		let transformed_polygon = polygon.map(|point| self.camera.similarity * point);
 
-		DrawRenderer::filled_polygon(canvas, vx, vy, Colors::DARK_CYAN).unwrap();
+		let vx = &transformed_polygon.map(|point| point.x as i16);
+		let vy = &transformed_polygon.map(|point| point.y as i16);
+		DrawRenderer::filled_polygon(canvas, vx, vy, Colors::BLUE).unwrap();
+
+		let position = Point2::from(Vector2::new(700.0, 300.0));
+		let radius = Vector2::new(100.0, 60.0);
+
+		let transformed_position = self.camera.similarity * position;
+		let transformed_radius = self.camera.similarity * radius;
+		let (x, y) = (transformed_position.x as i16, transformed_position.y as i16);
+		let (rx, ry) = (transformed_radius.x as i16, transformed_radius.y as i16);
+		DrawRenderer::filled_ellipse(canvas, x, y, rx, ry, Colors::DARK_GREEN).unwrap();
 	}
 }
 

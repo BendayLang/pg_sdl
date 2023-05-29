@@ -1,5 +1,5 @@
 use crate::{input::Input, point};
-use nalgebra::{Point2, Similarity2, Translation2, Vector2};
+use nalgebra::{Point2, Scale2, Similarity2, Translation2, Vector2};
 use sdl2::rect::Point;
 
 pub struct Camera {
@@ -8,6 +8,8 @@ pub struct Camera {
 }
 
 impl Camera {
+	const SCALING_FACTOR: f64 = 1.1892071150027210667174999705605; // f64::powf(2.0, 1.0 / 4.0);
+
 	pub fn new(resolution: Vector2<u32>) -> Self {
 		Camera { resolution, similarity: Similarity2::identity() }
 	}
@@ -22,6 +24,17 @@ impl Camera {
 				self.similarity.append_translation_mut(&translation);
 				changed = true;
 			}
+		}
+
+		let scroll = input.mouse.wheel;
+		if scroll != 0 {
+			let scaling = Self::SCALING_FACTOR.powf(scroll as f64);
+			let center = Point2::from(Vector2::new(input.mouse.position.x as f64, input.mouse.position.y as f64));
+
+			let translation = Translation2::from((1.0 / scaling - 1.0) * center.coords);
+			self.similarity.append_translation_mut(&translation);
+			self.similarity.append_scaling_mut(scaling);
+			changed = true;
 		}
 
 		changed
