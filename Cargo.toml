@@ -36,3 +36,11 @@ name = "basic"
 name = "physics_engine"
 path = "examples/text_input.rs"
 
+[[example]]
+name = "benday"
+path = "examples/benday/main.rs"
+
+[[example]]
+name = "text_input"
+path = "examples/text_input.rs"
+

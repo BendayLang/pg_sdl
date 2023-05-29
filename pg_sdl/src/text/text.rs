@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::path::Path;
 
-static FONT_PATH: &str = "fonts/";
+static FONT_PATH: &str = "./fonts";
 static DEFAULT_FONT_NAME: &str = "Vera.ttf";
 
 pub struct TextStyle {
@@ -20,13 +20,13 @@ impl TextStyle {
         font_style: sdl2::ttf::FontStyle,
     ) -> Self {
         let font_name = if let Some(font_name) = font_name {
-            let font_name = format!("{}Vera.ttf", FONT_PATH);
+            let font_name = format!("{}/Vera.ttf", FONT_PATH);
             if !Path::new(&font_name).exists() {
-                format!("{}DejaVuSans.ttf", FONT_PATH);
+                format!("{}/DejaVuSans.ttf", FONT_PATH);
             }
             font_name
         } else {
-            format!("{}{}", FONT_PATH, DEFAULT_FONT_NAME)
+            format!("{}/{}", FONT_PATH, DEFAULT_FONT_NAME)
         };
 
         Self {
@@ -44,7 +44,7 @@ impl Default for TextStyle {
         Self {
             // text: String::new(),
             font_size: 16,
-            font_name: format!("{}{}", FONT_PATH, DEFAULT_FONT_NAME),
+            font_name: format!("{}/{}", FONT_PATH, DEFAULT_FONT_NAME),
             color: Color::BLACK,
             font_style: sdl2::ttf::FontStyle::NORMAL,
         }

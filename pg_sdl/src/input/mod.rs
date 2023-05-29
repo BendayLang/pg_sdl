@@ -1,7 +1,8 @@
 mod key_state;
 mod mouse;
 
-pub use key_state::{KeyState, KeysState};
+pub use key_state::{KeyState, KeysState, Shortcut};
+use sdl2::clipboard::ClipboardUtil;
 
 pub struct Input {
     event_pump: sdl2::EventPump,
@@ -9,17 +10,19 @@ pub struct Input {
     pub keys_state: KeysState,
     pub mouse: mouse::Mouse,
     pub last_char: Option<char>,
+    pub clipboard: ClipboardUtil,
 }
 
 impl Input {
     /// can crash
-    pub fn new(sdl_context: sdl2::Sdl) -> Self {
+    pub fn new(sdl_context: sdl2::Sdl, clipboard: ClipboardUtil) -> Self {
         Input {
             event_pump: sdl_context.event_pump().unwrap(),
             window_closed: false,
             keys_state: KeysState::new(),
             mouse: mouse::Mouse::new(),
             last_char: None,
+            clipboard,
         }
     }
 
@@ -31,7 +34,7 @@ impl Input {
             key_state.update()
         }
 
-        self.mouse.get_events();
+        self.mouse.update();
 
         for event in self.event_pump.poll_iter() {
             use sdl2::event::Event;
@@ -61,5 +64,9 @@ impl Input {
                 _ => {}
             }
         }
+    }
+
+    pub fn shortcut_pressed(&self, shortcut: &Shortcut) -> bool {
+        self.keys_state.shortcut_pressed(shortcut)
     }
 }

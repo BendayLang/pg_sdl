@@ -1,5 +1,5 @@
-use crate::rect;
-use crate::text::TextDrawer;
+use pg_sdl::prelude::TextDrawer;
+use pg_sdl::rect;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Canvas, TextureCreator};
@@ -47,11 +47,6 @@ impl Bloc {
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        // canvas.set_draw_color(self.color);
-        // fill_rect(canvas, self.rect, self.corner_radius);
-        // canvas.set_draw_color(Color::BLACK);
-        // draw_rect(canvas, self.rect);
-
         let texture_creator = canvas.texture_creator();
 
         let mut surface = Surface::new(
