@@ -1,5 +1,6 @@
 pub mod button;
 pub mod slider;
+pub mod switch;
 pub mod text_input;
 
 use crate::input::Input;
@@ -10,13 +11,17 @@ use sdl2::video::Window;
 use std::collections::HashMap;
 
 pub use button::Button;
-pub use slider::Orientation;
 pub use slider::Slider;
 pub use slider::SliderType;
 pub use text_input::{TextInput, TextInputStyle};
 
 const HOVER: f32 = 0.94;
 const PUSH: f32 = 0.80;
+
+pub enum Orientation {
+	Horizontal,
+	Vertical,
+}
 
 /// A widget is a UI object that can be interacted with to take inputs from the user.
 pub trait Widget: AsAny {
