@@ -10,11 +10,15 @@ pub struct TextStyle {
     pub font_size: u16,
     pub font_name: String,
     pub font_style: sdl2::ttf::FontStyle,
-    pub h_align: Align,
 }
 
 impl TextStyle {
-    pub fn new(font_size: u16, font_name: Option<&str>) -> Self {
+    pub fn new(
+        font_size: u16,
+        font_name: Option<&str>,
+        color: Color,
+        font_style: sdl2::ttf::FontStyle,
+    ) -> Self {
         let font_name = if let Some(font_name) = font_name {
             let font_name = format!("{}Vera.ttf", FONT_PATH);
             if !Path::new(&font_name).exists() {
@@ -29,9 +33,8 @@ impl TextStyle {
             // text,
             font_size,
             font_name,
-            color: Color::BLACK,
-            font_style: sdl2::ttf::FontStyle::NORMAL,
-            h_align: Align::Start,
+            color,
+            font_style,
         }
     }
 }
@@ -44,7 +47,6 @@ impl Default for TextStyle {
             font_name: format!("{}{}", FONT_PATH, DEFAULT_FONT_NAME),
             color: Color::BLACK,
             font_style: sdl2::ttf::FontStyle::NORMAL,
-            h_align: Align::Start,
         }
     }
 }

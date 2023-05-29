@@ -1,25 +1,34 @@
+use crate::canvas::draw_rect;
 use crate::input::KeyState;
 use crate::prelude::*;
+use crate::widgets::{HOVER, PUSH};
 
 pub struct TextInputStyle {
-    pub background_color: Color,
-    pub corner_radius: Option<u16>,
-    pub text_style: TextStyle,
-    pub rect: Rect,
+    background_color: Color,
+    background_hovered_color: Color,
+    background_pushed_color: Color,
+    contour_color: Color,
+    contour_focused_color: Color,
+    corner_radius: Option<u16>,
+    text_style: TextStyle,
 }
 
 impl Default for TextInputStyle {
     fn default() -> Self {
         Self {
-            background_color: Color::WHITE,
-            corner_radius: Some(5),
+            background_color: Colors::WHITE,
+            background_hovered_color: darker(Colors::WHITE, HOVER),
+            background_pushed_color: darker(Colors::WHITE, PUSH),
+            contour_color: Colors::BLACK,
+            contour_focused_color: paler(Colors::BLUE, 0.9),
+            corner_radius: Some(4),
             text_style: TextStyle::default(),
-            rect: Rect::new(100, 100, 120, 30),
         }
     }
 }
 
 pub struct TextInput {
+    rect: Rect,
     style: TextInputStyle,
     content: String,
     hovered: bool,
@@ -28,12 +37,13 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(style: Option<TextInputStyle>, default_text: Option<String>) -> Self {
+    pub fn new(rect: Rect, style: Option<TextInputStyle>, default_text: Option<String>) -> Self {
         Self {
-            hovered: false,
-            state: KeyState::new(),
+            rect,
             style: style.unwrap_or_default(),
             content: default_text.unwrap_or_default(),
+            hovered: false,
+            state: KeyState::new(),
             is_focused: false,
         }
     }
@@ -44,19 +54,22 @@ impl Widget for TextInput {
         let mut changed = false;
         self.state.update();
 
-        let hovered = self.style.rect.contains_point(input.mouse.position);
+        let hovered = self.rect.contains_point(input.mouse.position);
         if hovered != self.hovered {
             self.hovered = hovered;
             changed = true;
         }
 
-        if self.hovered && input.mouse.left_button.is_pressed() {
+        if input.mouse.left_button.is_pressed() && self.hovered {
             self.state.press();
             self.is_focused = true;
             changed = true;
-        } else if !self.hovered && input.mouse.left_button.is_pressed() {
+        } else if input.mouse.left_button.is_pressed() && !self.hovered {
             self.state.release();
             self.is_focused = false;
+            changed = true;
+        } else if self.state.is_down() && input.mouse.left_button.is_released() {
+            self.state.release();
             changed = true;
         }
 
@@ -77,27 +90,56 @@ impl Widget for TextInput {
     }
 
     fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-        let color = if !self.is_focused {
-            darker(self.style.background_color, 0.9)
-        } else if self.state.is_pressed() {
-            darker(self.style.background_color, 0.8)
+        let background_color = if self.state.is_pressed() | self.state.is_down() {
+            self.style.background_pushed_color
         } else if self.hovered {
-            darker(self.style.background_color, 0.7)
+            self.style.background_hovered_color
         } else {
             self.style.background_color
         };
-
-        fill_rect(canvas, self.style.rect, color, self.style.corner_radius);
+        let contour_color = if self.is_focused {
+            self.style.contour_focused_color
+        } else {
+            self.style.contour_color
+        };
+        fill_rect(
+            canvas,
+            self.rect,
+            background_color,
+            self.style.corner_radius,
+        );
+        draw_rect(
+            canvas,
+            self.rect,
+            self.style.contour_color,
+            self.style.corner_radius,
+        );
+        if self.is_focused {
+            let rect = Rect::new(
+                self.rect.left() + 1,
+                self.rect.top() + 1,
+                self.rect.width() - 2,
+                self.rect.height() - 2,
+            );
+            let corner_radius = self.style.corner_radius.map(|r| r - 1);
+            draw_rect(
+                canvas,
+                rect,
+                self.style.contour_focused_color,
+                corner_radius,
+            );
+        }
 
         if !self.content.is_empty() {
             text_drawer.draw(
                 canvas,
                 point!(
-                    self.style.rect.left() + 5,
-                    self.style.rect.height() as i32 / 2 + self.style.rect.top()
+                    self.rect.left() + 5,
+                    self.rect.height() as i32 / 2 + self.rect.top()
                 ),
                 &self.style.text_style,
                 &self.content,
+                Align::Left,
             );
         }
     }
