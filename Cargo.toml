@@ -22,20 +22,25 @@ path = "pg_sdl/src/lib.rs"
 sdl2 = { version = "0.35.2", features = ["ttf", "gfx"] }
 itertools = "0.10.5"
 as-any = "0.3.0"
-ndarray = "0.15.6"
+ndarray = "0.13.0"
+nalgebra = "0.32.2"
 
 [[bin]]
 name = "pg_sdl2"
-path = "examples/text_input.rs"
+path = "examples/basic.rs"
 
 [[example]]
 name = "basic"
 
 [[example]]
-name = "spring"
-path = "examples/physics_engine/main.rs"
+name = "physics_engine"
+path = "examples/text_input.rs"
 
 [[example]]
 name = "benday"
 path = "examples/benday/main.rs"
+
+[[example]]
+name = "text_input"
+path = "examples/text_input.rs"
 

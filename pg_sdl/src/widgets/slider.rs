@@ -228,7 +228,7 @@ impl Widget for Slider {
             } else {
                 self.back_color
             },
-            self.corner_radius,
+            self.corner_radius.map(|r| (r as f32 * b) as u16),
         );
 
         fill_rect(
@@ -239,7 +239,7 @@ impl Widget for Slider {
             } else {
                 self.color
             },
-            self.corner_radius,
+            self.corner_radius.map(|r| (r as f32 * b) as u16),
         );
 
         // Pad
