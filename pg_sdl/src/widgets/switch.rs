@@ -92,7 +92,7 @@ impl Widget for Switch {
 		changed
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
+	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer) {
 		let b: f32 = 0.7;
 
 		let color = {

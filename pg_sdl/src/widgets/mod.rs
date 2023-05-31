@@ -28,7 +28,7 @@ pub trait Widget: AsAny {
 	/// Update the widget based on the inputs
 	fn update(&mut self, input: &Input, delta: f32, text_drawer: &mut TextDrawer) -> bool;
 	/// Draw the widget on the canvas
-	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer);
+	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer);
 }
 
 pub struct Widgets(HashMap<String, Box<dyn Widget>>);
@@ -50,18 +50,18 @@ impl Widgets {
 		self.0.get_mut(name).and_then(|w| w.as_mut().downcast_mut::<T>())
 	}
 
-	pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-		for widget in self.0.values() {
-			widget.draw(canvas, text_drawer);
-		}
-	}
-
 	pub fn update(&mut self, input: &Input, delta: f32, text_drawer: &mut TextDrawer) -> bool {
 		let mut redraw = false;
 		for widget in self.0.values_mut() {
 			redraw |= widget.update(input, delta, text_drawer);
 		}
 		redraw
+	}
+
+	pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer) {
+		for widget in self.0.values() {
+			widget.draw(canvas, text_drawer);
+		}
 	}
 
 	// TODO: remove this and replace with a macro that right all the code for us

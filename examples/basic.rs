@@ -5,7 +5,8 @@ use pg_sdl::widgets::{switch::Switch, text_input::TextInput, Widgets};
 // Here we define our app-state struct
 pub struct MyApp {
 	camera: Camera,
-	pub draw_circle: bool,
+	draw_circle: bool,
+	background_color: Color,
 }
 
 // To call the run function of PgSdl, we need to implement the App trait for our app-state struct
@@ -29,7 +30,7 @@ impl App for MyApp {
 
 	// The draw function is called every frame, if update returned true or any widget has changed
 	// It is called just after the update function
-	fn draw(&mut self, canvas: &mut Canvas<Window>, _text_drawer: &mut TextDrawer) {
+	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer) {
 		// We can put any custom drawing code here
 		if self.draw_circle {
 			canvas.set_draw_color(Colors::VIOLET);
@@ -43,40 +44,42 @@ impl App for MyApp {
 				.collect::<Vec<Rect>>();
 			canvas.draw_rects(&rects).unwrap();
 		}
-		// All the widgets are drawn automatically by PgSdl
 
-		let polygon = [
-			Vector2::new(500.0, 200.0),
-			Vector2::new(600.0, 200.0),
-			Vector2::new(650.0, 400.0),
-			Vector2::new(480.0, 380.0),
-		]
-		.map(|vector| Point2::from(vector));
+		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.9), 200.0);
+		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.7), 220.0);
+		self.camera.draw_grid(canvas, text_drawer, self.background_color, true, true);
 
-		let transformed_polygon = polygon.map(|point| self.camera.similarity * point);
+		let vertices = Vec::from([
+			Point2::new(500.0, 200.0),
+			Point2::new(600.0, 200.0),
+			Point2::new(650.0, 400.0),
+			Point2::new(480.0, 380.0),
+		]);
+		self.camera.fill_polygon(canvas, Colors::LIGHT_BLUE, &vertices);
+		self.camera.draw_polygon(canvas, Colors::BLACK, &vertices);
 
-		let vx = &transformed_polygon.map(|point| point.x as i16);
-		let vy = &transformed_polygon.map(|point| point.y as i16);
-		DrawRenderer::filled_polygon(canvas, vx, vy, Colors::BLUE).unwrap();
+		self.camera.fill_rectangle(canvas, Colors::DARK_CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
+		self.camera.draw_rectangle(canvas, Colors::CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
 
-		let position = Point2::from(Vector2::new(700.0, 300.0));
-		let radius = Vector2::new(100.0, 60.0);
+		self.camera.fill_ellipse(canvas, Colors::DARK_GREEN, Point2::new(700.0, 300.0), Vector2::new(100.0, 60.0));
+		self.camera.draw_ellipse(canvas, Colors::LIGHT_GREEN, Point2::new(700.0, 300.0), Vector2::new(100.0, 60.0));
 
-		let transformed_position = self.camera.similarity * position;
-		let transformed_radius = self.camera.similarity * radius;
-		let (x, y) = (transformed_position.x as i16, transformed_position.y as i16);
-		let (rx, ry) = (transformed_radius.x as i16, transformed_radius.y as i16);
-		DrawRenderer::filled_ellipse(canvas, x, y, rx, ry, Colors::DARK_GREEN).unwrap();
+		self.camera.fill_circle(canvas, Colors::ORANGE, Point2::new(800.0, 300.0), 50.0);
+		self.camera.draw_circle(canvas, Colors::DARK_ORANGE, Point2::new(800.0, 300.0), 50.0);
+
+		// All the widgets are drawn automatically by PgSdl above all else
 	}
 }
 
 fn main() {
 	// First we initialize our custom app-state struct
 	let resolution = Vector2::new(1200, 700);
-	let mut my_app = MyApp { camera: Camera::new(resolution), draw_circle: false };
+	let background_color = Colors::SKY_BLUE;
+
+	let mut my_app = MyApp { camera: Camera::new(resolution), draw_circle: false, background_color };
 
 	// Then we initialize the PgSdl struct
-	let mut pd_sdl: PgSdl = PgSdl::init("Benday", resolution.x, resolution.y, Some(60), true, Colors::SKY_BLUE);
+	let mut pd_sdl: PgSdl = PgSdl::init("Benday", resolution.x, resolution.y, Some(60), true, background_color);
 
 	// We can add widgets to the PgSdl struct (as long as they implement the Widget trait)
 	// We will retrieve them later in the update function with the name we gave them
