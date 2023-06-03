@@ -122,7 +122,8 @@ impl Widget for Slider {
 		let mut changed = false;
 		self.state.update();
 
-		let hovered = self.rect.contains_point(input.mouse.position);
+		let mouse_position = Point::new(input.mouse.position.x, input.mouse.position.y);
+		let hovered = self.rect.contains_point(mouse_position);
 		if hovered != self.hovered {
 			self.hovered = hovered;
 			changed = true;
@@ -140,8 +141,8 @@ impl Widget for Slider {
 			let value = {
 				let point = input.mouse.position;
 				let thumb_position = match self.orientation {
-					Orientation::Horizontal => point.x() - self.rect.left(),
-					Orientation::Vertical => self.rect.bottom() - point.y(),
+					Orientation::Horizontal => point.x - self.rect.left(),
+					Orientation::Vertical => self.rect.bottom() - point.y,
 				} - self.thickness() as i32 / 2;
 				thumb_position.clamp(0, self.length() as i32) as f32 / self.length() as f32
 			};

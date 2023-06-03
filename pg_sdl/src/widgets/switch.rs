@@ -71,7 +71,8 @@ impl Widget for Switch {
 		let mut changed = false;
 		self.state.update();
 
-		let hovered = self.rect.contains_point(input.mouse.position);
+		let mouse_position = Point::new(input.mouse.position.x, input.mouse.position.y);
+		let hovered = self.rect.contains_point(mouse_position);
 		if hovered != self.hovered {
 			self.hovered = hovered;
 			changed = true;

@@ -49,12 +49,12 @@ impl Camera {
 		let mut changed = false;
 
 		if input.mouse.left_button.is_down() {
-			let delta = Vector2::new(input.mouse.delta.x as f64, input.mouse.delta.y as f64);
+			let delta = input.mouse.delta.cast();
 			changed |= self.translate(delta);
 		}
 
 		let scaling = self.scaling_factor.powf(input.mouse.wheel as f64);
-		let center = Vector2::new(input.mouse.position.x as f64, input.mouse.position.y as f64);
+		let center = input.mouse.position.coords.cast();
 		changed |= self.change_scale(scaling, center);
 
 		changed
