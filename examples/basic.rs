@@ -14,7 +14,9 @@ impl App for MyApp {
 	// The update function is called every frame, and is used to update the app-state
 	fn update(&mut self, _delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
 		let mut changed = false;
+		// if not widgets_changed { TODO implement that <-
 		changed |= self.camera.update(input);
+		// }
 
 		if self.draw_circle {
 			changed = true;
@@ -47,7 +49,7 @@ impl App for MyApp {
 
 		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.9), 200.0);
 		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.7), 220.0);
-		self.camera.draw_grid(canvas, text_drawer, self.background_color, true, true);
+		self.camera.draw_grid(canvas, text_drawer, self.background_color, true, false);
 
 		let vertices = Vec::from([
 			Point2::new(500.0, 200.0),
@@ -76,7 +78,8 @@ fn main() {
 	let resolution = Vector2::new(1200, 700);
 	let background_color = Colors::SKY_BLUE;
 
-	let mut my_app = MyApp { camera: Camera::new(resolution), draw_circle: false, background_color };
+	let camera = Camera::new(resolution, 6, 2.0, 8.0, -5000.0, 5000.0, -5000.0, 5000.0);
+	let mut my_app = MyApp { camera, draw_circle: false, background_color };
 
 	// Then we initialize the PgSdl struct
 	let mut pd_sdl: PgSdl = PgSdl::init("Benday", resolution.x, resolution.y, Some(60), true, background_color);

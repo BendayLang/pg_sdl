@@ -9,59 +9,126 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::ttf::FontStyle;
 use sdl2::video::Window;
-use std::ops::{Neg, Not, Rem};
 
 pub struct Camera {
-	resolution: Vector2<u32>,
 	pub transform: Similarity2<f64>,
+	resolution: Vector2<u32>,
+	scaling_factor: f64,
+	min_scale: f64,
+	max_scale: f64,
+	top_limit: f64,
+	bottom_limit: f64,
+	left_limit: f64,
+	right_limit: f64,
 }
 
 impl Camera {
-	const SCALING_FACTOR: f64 = 1.1892071150027210667174999705605; // f64::powf(2.0, 1.0 / 4.0);
-
-	pub fn new(resolution: Vector2<u32>) -> Self {
-		Camera { resolution, transform: Similarity2::identity() }
+	pub fn new(
+		resolution: Vector2<u32>, doubling_steps: u8, zoom_in_limit: f64, zoom_out_limit: f64, top_limit: f64,
+		bottom_limit: f64, left_limit: f64, right_limit: f64,
+	) -> Self {
+		Camera {
+			resolution,
+			transform: Similarity2::new(resolution.cast() * 0.5, 0.0, 1.0),
+			scaling_factor: f64::powf(2.0, 1.0 / doubling_steps as f64),
+			min_scale: 1.0 / zoom_out_limit,
+			max_scale: zoom_in_limit,
+			top_limit,
+			bottom_limit,
+			left_limit,
+			right_limit,
+		}
 	}
 
+	fn scale(&self) -> f64 {
+		self.transform.scaling()
+	}
+
+	/// Translates and scales the camera from the inputs
 	pub fn update(&mut self, input: &Input) -> bool {
 		let mut changed = false;
 
 		if input.mouse.left_button.is_down() {
 			let delta = Vector2::new(input.mouse.delta.x as f64, input.mouse.delta.y as f64);
-			if delta != Vector2::zeros() {
-				let translation = Translation2::new(delta.x, delta.y);
-				self.transform.append_translation_mut(&translation);
-				changed = true;
-			}
+			changed |= self.translate(delta);
 		}
 
-		let scroll = input.mouse.wheel;
-		if scroll != 0 {
-			let scaling = Self::SCALING_FACTOR.powf(scroll as f64);
-			let center = Point2::from(Vector2::new(input.mouse.position.x as f64, input.mouse.position.y as f64));
-
-			let translation = Translation2::from((1.0 / scaling - 1.0) * center.coords);
-			self.transform.append_translation_mut(&translation);
-			self.transform.append_scaling_mut(scaling);
-			changed = true;
-		}
+		let scaling = self.scaling_factor.powf(input.mouse.wheel as f64);
+		let center = Vector2::new(input.mouse.position.x as f64, input.mouse.position.y as f64);
+		changed |= self.change_scale(scaling, center);
 
 		changed
 	}
 
+	/// Translates the camera by 'delta' while restricting it within it limits.
+	fn translate(&mut self, delta: Vector2<f64>) -> bool {
+		if delta.is_empty() {
+			return false;
+		}
+		let old_translation = self.transform.isometry.translation;
+		self.transform.append_translation_mut(&Translation2::from(delta));
+
+		let start = self.transform.inverse() * Point2::origin(); // Top Left
+		let end = self.transform.inverse() * Point2::from(self.resolution.cast()); // Bottom Right
+
+		if start.x < self.left_limit {
+			self.transform.isometry.translation.x = -self.left_limit * self.scale();
+		}
+		if start.y < self.top_limit {
+			self.transform.isometry.translation.y = -self.top_limit * self.scale();
+		}
+		if end.x > self.right_limit {
+			self.transform.isometry.translation.x = -self.right_limit * self.scale() + self.resolution.x as f64;
+		}
+		if end.y > self.bottom_limit {
+			self.transform.isometry.translation.y = -self.bottom_limit * self.scale() + self.resolution.y as f64;
+		}
+
+		self.transform.isometry.translation != old_translation
+	}
+
+	/// Scales the camera by 'scaling' while restricting it within it limits.
+	fn change_scale(&mut self, scaling: f64, center: Vector2<f64>) -> bool {
+		if scaling == 1.0 {
+			return false;
+		}
+		if self.min_scale > self.scale() * scaling {
+			if self.scale() <= self.min_scale {
+				return false;
+			}
+			let adjusted_scaling = self.min_scale / self.scale();
+			self.transform.append_scaling_mut(adjusted_scaling);
+			self.translate((1.0 - adjusted_scaling) * center);
+			true
+		} else if self.max_scale < self.scale() * scaling {
+			if self.scale() >= self.max_scale {
+				return false;
+			}
+			let adjusted_scaling = self.max_scale / self.scale();
+			self.transform.append_scaling_mut(adjusted_scaling);
+			self.translate((1.0 - adjusted_scaling) * center);
+			true
+		} else {
+			self.transform.append_scaling_mut(scaling);
+			self.translate((1.0 - scaling) * center);
+			true
+		}
+	}
+
 	fn resize(&mut self, new_resolution: Vector2<u32>) {
 		// self.move((self.resolution - new_size) / self.scale / 2);
+		self.translate((self.resolution - new_resolution).cast() / 2.0);
 		self.resolution = new_resolution;
 	}
 
 	/// Draws a vertical line as seen by the camera
-	pub fn draw_vline(&self, canvas: &mut Canvas<Window>, color: Color, x: f64) {
-		let x = self.transform.scaling() * x + self.transform.isometry.translation.x;
+	pub fn draw_vline(&self, canvas: &mut Canvas<Window>, color: Color, x: f64, y1: f64, y2: f64) {
+		let x = self.scale() * x + self.transform.isometry.translation.x;
 		DrawRenderer::vline(canvas, x as i16, 0, self.resolution.y as i16 - 1, color).unwrap();
 	}
 	/// Draws a horizontal line as seen by the camera
 	pub fn draw_hline(&self, canvas: &mut Canvas<Window>, color: Color, y: f64) {
-		let y = self.transform.scaling() * y + self.transform.isometry.translation.y;
+		let y = self.scale() * y + self.transform.isometry.translation.y;
 		DrawRenderer::hline(canvas, 0, self.resolution.x as i16 - 1, y as i16, color).unwrap();
 	}
 
@@ -86,7 +153,7 @@ impl Camera {
 	pub fn draw_ellipse(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, size: Vector2<f64>) {
 		let position = self.transform * position;
 		let size = self.transform * size;
-		DrawRenderer::aa_ellipse(canvas, position.x as i16, position.y as i16, size.x as i16, size.y as i16, color)
+		DrawRenderer::ellipse(canvas, position.x as i16, position.y as i16, size.x as i16, size.y as i16, color)
 			.unwrap();
 	}
 	/// Draws a filled ellipse as seen by the camera
@@ -94,19 +161,19 @@ impl Camera {
 		let position = self.transform * position;
 		let size = self.transform * size;
 		DrawRenderer::filled_ellipse(canvas, position.x as i16, position.y as i16, size.x as i16, size.y as i16, color)
-			.unwrap();
+			.expect(&format!("size: {}", size));
 	}
 
 	/// Draws the contour of a circle as seen by the camera
 	pub fn draw_circle(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radius: f64) {
 		let position = self.transform * position;
-		let radius = self.transform.scaling() * radius;
-		DrawRenderer::aa_circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
+		let radius = self.scale() * radius;
+		DrawRenderer::circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
 	}
 	/// Draws a filled circle as seen by the camera
 	pub fn fill_circle(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radius: f64) {
 		let position = self.transform * position;
-		let radius = self.transform.scaling() * radius;
+		let radius = self.scale() * radius;
 		DrawRenderer::filled_circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
 	}
 
@@ -118,7 +185,7 @@ impl Camera {
 		let vertices: Vec<Point2<f64>> = vertices.iter().map(|point| self.transform * point).collect();
 		let vx: Vec<i16> = vertices.iter().map(|point| point.x as i16).collect();
 		let vy: Vec<i16> = vertices.iter().map(|point| point.y as i16).collect();
-		DrawRenderer::aa_polygon(canvas, &vx, &vy, color).unwrap();
+		DrawRenderer::polygon(canvas, &vx, &vy, color).unwrap();
 	}
 	/// Draws a filled polygon from its vertices as seen by the camera
 	pub fn fill_polygon(&self, canvas: &mut Canvas<Window>, color: Color, vertices: &Vec<Point2<f64>>) {
@@ -134,7 +201,7 @@ impl Camera {
 	) {
 		let max_depth = 2;
 
-		let p = (self.transform.scaling().log(5.0) + 1.4).floor();
+		let p = (self.scale().log(5.0) + 1.4).floor();
 		let global_scale = 5_f64.powf(p) / 100.0;
 		let global_unit = |depth: i16| 5_f64.powf(depth as f64 - p) * 100.0;
 
@@ -159,21 +226,19 @@ impl Camera {
 			if v_align == VAlign::Center { VAlign::Top } else { v_align },
 		);
 
-		let x_transform = |x_th: i32, scale: f64| {
-			(self.transform.scaling() / scale * x_th as f64 + self.transform.isometry.translation.x) as i16
-		};
-		let y_transform = |y_th: i32, scale: f64| {
-			(self.transform.scaling() / scale * y_th as f64 + self.transform.isometry.translation.y) as i16
-		};
+		let x_transform =
+			|x_th: i32, scale: f64| (self.scale() / scale * x_th as f64 + self.transform.isometry.translation.x) as i16;
+		let y_transform =
+			|y_th: i32, scale: f64| (self.scale() / scale * y_th as f64 + self.transform.isometry.translation.y) as i16;
 
 		// Grid
 		(0..=max_depth).for_each(|depth| {
 			let line_color = darker(
 				color,
 				match depth {
-					0 => 0.95,
-					1 => 0.86,
-					_ => 0.77,
+					0 => 0.96,
+					1 => 0.88,
+					_ => 0.80,
 				},
 			);
 			let scale = global_scale * 5_f64.powf(-depth as f64);
