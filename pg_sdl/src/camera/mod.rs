@@ -44,18 +44,27 @@ impl Camera {
 		self.transform.scaling()
 	}
 
+	fn translation(&self) -> Vector2<f64> {
+		self.transform.isometry.translation.vector
+	}
+
+	fn is_in_camera_scope(&self, rect: Rect) -> bool {
+		let camera_scope = Rect::new(0, 0, self.resolution.x, self.resolution.y);
+		camera_scope.has_intersection(rect)
+	}
+
 	/// Translates and scales the camera from the inputs
 	pub fn update(&mut self, input: &Input) -> bool {
 		let mut changed = false;
 
 		if input.mouse.left_button.is_down() {
-			let delta = input.mouse.delta.cast();
-			changed |= self.translate(delta);
+			let mouse_delta = input.mouse.delta.cast();
+			changed |= self.translate(mouse_delta);
 		}
 
 		let scaling = self.scaling_factor.powf(input.mouse.wheel as f64);
-		let center = input.mouse.position.coords.cast();
-		changed |= self.change_scale(scaling, center);
+		let mouse_position = input.mouse.position.coords.cast();
+		changed |= self.change_scale(scaling, mouse_position);
 
 		changed
 	}
@@ -65,7 +74,7 @@ impl Camera {
 		if delta.is_empty() {
 			return false;
 		}
-		let old_translation = self.transform.isometry.translation;
+		let old_translation = self.translation();
 		self.transform.append_translation_mut(&Translation2::from(delta));
 
 		let start = self.transform.inverse() * Point2::origin(); // Top Left
@@ -84,7 +93,7 @@ impl Camera {
 			self.transform.isometry.translation.y = -self.bottom_limit * self.scale() + self.resolution.y as f64;
 		}
 
-		self.transform.isometry.translation != old_translation
+		self.translation() != old_translation
 	}
 
 	/// Scales the camera by 'scaling' while restricting it within it limits.
@@ -121,14 +130,14 @@ impl Camera {
 		self.resolution = new_resolution;
 	}
 
-	/// Draws a vertical line as seen by the camera
-	pub fn draw_vline(&self, canvas: &mut Canvas<Window>, color: Color, x: f64, y1: f64, y2: f64) {
-		let x = self.scale() * x + self.transform.isometry.translation.x;
+	/// Draws a vertical line running the height of the screen and the x coordinate as seen by the camera
+	pub fn draw_vline(&self, canvas: &mut Canvas<Window>, color: Color, x: f64) {
+		let x = self.scale() * x + self.translation().x;
 		DrawRenderer::vline(canvas, x as i16, 0, self.resolution.y as i16 - 1, color).unwrap();
 	}
-	/// Draws a horizontal line as seen by the camera
+	/// Draws a horizontal line running the width of the screen and the y coordinate as seen by the camera
 	pub fn draw_hline(&self, canvas: &mut Canvas<Window>, color: Color, y: f64) {
-		let y = self.scale() * y + self.transform.isometry.translation.y;
+		let y = self.scale() * y + self.translation().y;
 		DrawRenderer::hline(canvas, 0, self.resolution.x as i16 - 1, y as i16, color).unwrap();
 	}
 
@@ -137,62 +146,111 @@ impl Camera {
 		let position = self.transform * position;
 		let size = self.transform * size;
 		let rect = Rect::new(position.x as i32, position.y as i32, size.x as u32, size.y as u32);
-		canvas.set_draw_color(color);
-		canvas.draw_rect(rect).unwrap();
+		if self.is_in_camera_scope(rect) {
+			canvas.set_draw_color(color);
+			canvas.draw_rect(rect).unwrap();
+		};
 	}
 	/// Draws a filled rectangle as seen by the camera
 	pub fn fill_rectangle(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, size: Vector2<f64>) {
 		let position = self.transform * position;
 		let size = self.transform * size;
 		let rect = Rect::new(position.x as i32, position.y as i32, size.x as u32, size.y as u32);
-		canvas.set_draw_color(color);
-		canvas.fill_rect(rect).unwrap();
+		if self.is_in_camera_scope(rect) {
+			canvas.set_draw_color(color);
+			canvas.fill_rect(rect).unwrap();
+		};
 	}
 
 	/// Draws the contour of an ellipse as seen by the camera
-	pub fn draw_ellipse(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, size: Vector2<f64>) {
+	pub fn draw_ellipse(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radii: Vector2<f64>) {
 		let position = self.transform * position;
-		let size = self.transform * size;
-		DrawRenderer::ellipse(canvas, position.x as i16, position.y as i16, size.x as i16, size.y as i16, color)
-			.unwrap();
+		let radii = self.transform * radii;
+		let rect = Rect::new(
+			(position.x - radii.x) as i32,
+			(position.y - radii.y) as i32,
+			2 * radii.x as u32,
+			2 * radii.y as u32,
+		);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::ellipse(canvas, position.x as i16, position.y as i16, radii.x as i16, radii.y as i16, color)
+				.unwrap();
+		};
 	}
 	/// Draws a filled ellipse as seen by the camera
-	pub fn fill_ellipse(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, size: Vector2<f64>) {
+	pub fn fill_ellipse(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radii: Vector2<f64>) {
 		let position = self.transform * position;
-		let size = self.transform * size;
-		DrawRenderer::filled_ellipse(canvas, position.x as i16, position.y as i16, size.x as i16, size.y as i16, color)
-			.expect(&format!("size: {}", size));
+		let radii = self.transform * radii;
+		let rect = Rect::new(
+			(position.x - radii.x) as i32,
+			(position.y - radii.y) as i32,
+			2 * radii.x as u32,
+			2 * radii.y as u32,
+		);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::filled_ellipse(
+				canvas,
+				position.x as i16,
+				position.y as i16,
+				radii.x as i16,
+				radii.y as i16,
+				color,
+			)
+			.unwrap();
+		};
 	}
 
 	/// Draws the contour of a circle as seen by the camera
 	pub fn draw_circle(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radius: f64) {
 		let position = self.transform * position;
 		let radius = self.scale() * radius;
-		DrawRenderer::circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
+		let rect =
+			Rect::new((position.x - radius) as i32, (position.y - radius) as i32, 2 * radius as u32, 2 * radius as u32);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
+		};
 	}
 	/// Draws a filled circle as seen by the camera
 	pub fn fill_circle(&self, canvas: &mut Canvas<Window>, color: Color, position: Point2<f64>, radius: f64) {
 		let position = self.transform * position;
 		let radius = self.scale() * radius;
-		DrawRenderer::filled_circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
+		let rect =
+			Rect::new((position.x - radius) as i32, (position.y - radius) as i32, 2 * radius as u32, 2 * radius as u32);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::filled_circle(canvas, position.x as i16, position.y as i16, radius as i16, color).unwrap()
+		};
 	}
 
 	/// Draws ... as seen by the camera
-	pub fn draw_stuff(&self, canvas: &mut Canvas<Window>, color: Color, n: usize) {}
+	pub fn draw_stuff(&self, canvas: &mut Canvas<Window>, color: Color) {}
 
 	/// Draws the contour of a polygon from its vertices as seen by the camera
 	pub fn draw_polygon(&self, canvas: &mut Canvas<Window>, color: Color, vertices: &Vec<Point2<f64>>) {
 		let vertices: Vec<Point2<f64>> = vertices.iter().map(|point| self.transform * point).collect();
 		let vx: Vec<i16> = vertices.iter().map(|point| point.x as i16).collect();
 		let vy: Vec<i16> = vertices.iter().map(|point| point.y as i16).collect();
-		DrawRenderer::polygon(canvas, &vx, &vy, color).unwrap();
+		let x_min = *vx.iter().min().unwrap() as i32;
+		let y_min = *vy.iter().min().unwrap() as i32;
+		let x_max = *vx.iter().max().unwrap() as i32;
+		let y_max = *vy.iter().max().unwrap() as i32;
+		let rect = Rect::new(x_min, y_min, (x_max - x_min) as u32, (y_max - y_min) as u32);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::polygon(canvas, &vx, &vy, color).unwrap();
+		}
 	}
 	/// Draws a filled polygon from its vertices as seen by the camera
 	pub fn fill_polygon(&self, canvas: &mut Canvas<Window>, color: Color, vertices: &Vec<Point2<f64>>) {
 		let vertices: Vec<Point2<f64>> = vertices.iter().map(|point| self.transform * point).collect();
 		let vx: Vec<i16> = vertices.iter().map(|point| point.x as i16).collect();
 		let vy: Vec<i16> = vertices.iter().map(|point| point.y as i16).collect();
-		DrawRenderer::filled_polygon(canvas, &vx, &vy, color).unwrap();
+		let x_min = *vx.iter().min().unwrap() as i32;
+		let y_min = *vy.iter().min().unwrap() as i32;
+		let x_max = *vx.iter().max().unwrap() as i32;
+		let y_max = *vy.iter().max().unwrap() as i32;
+		let rect = Rect::new(x_min, y_min, (x_max - x_min) as u32, (y_max - y_min) as u32);
+		if self.is_in_camera_scope(rect) {
+			DrawRenderer::filled_polygon(canvas, &vx, &vy, color).unwrap();
+		}
 	}
 
 	/// Draws a grid
@@ -226,10 +284,8 @@ impl Camera {
 			if v_align == VAlign::Center { VAlign::Top } else { v_align },
 		);
 
-		let x_transform =
-			|x_th: i32, scale: f64| (self.scale() / scale * x_th as f64 + self.transform.isometry.translation.x) as i16;
-		let y_transform =
-			|y_th: i32, scale: f64| (self.scale() / scale * y_th as f64 + self.transform.isometry.translation.y) as i16;
+		let x_transform = |x_th: i32, scale: f64| (self.scale() / scale * x_th as f64 + self.translation().x) as i16;
+		let y_transform = |y_th: i32, scale: f64| (self.scale() / scale * y_th as f64 + self.translation().y) as i16;
 
 		// Grid
 		(0..=max_depth).for_each(|depth| {
