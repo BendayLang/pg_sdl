@@ -24,6 +24,8 @@ itertools = "0.10.5"
 as-any = "0.3.0"
 ndarray = "0.13.0"
 nalgebra = "0.32.2"
+rand = "0.8.5"
+color-print = "0.3.4"
 
 [[bin]]
 name = "pg_sdl2"
@@ -44,3 +46,6 @@ path = "examples/benday/main.rs"
 name = "text_input"
 path = "examples/text_input.rs"
 
+[[example]]
+name = "async"
+path = "examples/async.rs"

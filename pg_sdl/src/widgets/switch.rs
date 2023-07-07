@@ -54,6 +54,10 @@ impl Switch {
 		self.switched = switched;
 	}
 
+	pub fn is_switched(&self) -> bool {
+		self.switched
+	}
+
 	fn thumb_position(&self) -> u32 {
 		self.switched as u32 * self.length()
 	}
