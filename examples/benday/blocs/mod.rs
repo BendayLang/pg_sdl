@@ -16,7 +16,14 @@ use sdl2::video::Window;
 use std::collections::HashMap;
 
 pub trait Bloc {
+	fn new(position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self;
 	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
+	fn slot_position(&self, slot_id: u16) -> Vector2<f64>;
+	fn sequence_position(&self, sequence_id: u16) -> Vector2<f64>;
+	fn button_size(&self, button_id: u16) -> Vector2<f64>;
+	fn button_position(&self, button_id: u16) -> Vector2<f64>;
+	fn draw_button(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera);
+	fn button_function(&mut self, button_id: u16) -> bool;
 }
 
 /// A bloc represents a piece of code that can be executed.
@@ -41,7 +48,7 @@ impl Skeleton {
 	const MARGIN: f64 = 12.0;
 	const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
 
-	pub fn new_variable_assignment(color: Color, position: Point2<f64>, blocs: &HashMap<u32, Skeleton>) -> Self {
+	pub fn new_variable_assignment(color: Color, position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self {
 		// let color = hsv_color(30, 0.6, 1.0);
 		let mut bloc = Self {
 			color,
@@ -58,12 +65,12 @@ impl Skeleton {
 		bloc
 	}
 
-	pub fn repr(&self, blocs: &HashMap<u32, Skeleton>) -> String {
+	pub fn repr(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> String {
 		format!("Bloc( {} )", self.slots.get(0).unwrap().repr(blocs))
 	}
 
 	/// Met à jour la taille du bloc et celles de ses enfants.
-	fn update_size(&mut self, blocs: &mut HashMap<u32, Skeleton>) {
+	fn update_size(&mut self, blocs: &mut HashMap<u32, Box<dyn Bloc>>) {
 		/*
 		self.slots.iter().for_each(|slot| slot.update_size(blocs));
 		self.sequences.iter().for_each(|sequence| sequence.update_size(blocs));
@@ -71,7 +78,7 @@ impl Skeleton {
 		 */
 	}
 	/// Retourne la taille du bloc.
-	fn get_size(&self, blocs: &HashMap<u32, Skeleton>) -> Vector2<f64> {
+	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
 		// panic!("'get_size' is not implemented in '{}' class", self.type_name())
 		self.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) * Self::MARGIN
 	}
@@ -93,7 +100,7 @@ impl Skeleton {
 	/// Retourne la référence du bloc en collision avec un point (hiérarchie)
 	///
 	/// et sur quelle partie du bloc est ce point (hovered on).
-	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Skeleton>) -> Option<(Vec<u16>, HoveredOn)> {
+	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Option<(Vec<u16>, HoveredOn)> {
 		if !self.collide(point) {
 			return None;
 		}
@@ -136,19 +143,11 @@ impl Skeleton {
 		return Some((Vec::new(), HoveredOn::Body));
 	}
 
-	fn slot_position(&self, slot_id: u16) -> Vector2<f64> {
-		Vector2::new(Self::MARGIN, Self::MARGIN)
-	}
-
-	fn sequence_position(&self, sequence_id: u16) -> Vector2<f64> {
-		Vector2::zeros()
-	}
-
 	/// Retourne la référence du slot ou de la séquence en collision avec un rectangle (hiérarchie)
 	///
 	/// et la proportion de collision en hauteur (float).
 	fn hovered_slot(
-		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, blocs: &HashMap<u32, Skeleton>,
+		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, blocs: &HashMap<u32, Box<dyn Bloc>>,
 	) -> Option<(Vec<u16>, f32)> {
 		if !(Self::MARGIN - size.x < position.x
 			&& position.x < self.size.x - 2.0 * Self::MARGIN
@@ -184,8 +183,8 @@ impl Skeleton {
 	}
 
 	pub fn draw(
-		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, blocs: &HashMap<u32, Skeleton>,
-		selected: bool,
+		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera,
+		blocs: &HashMap<u32, Box<dyn Bloc>>, selected: bool,
 	) {
 		// SHADOW
 		let origin = if selected {

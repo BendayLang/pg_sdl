@@ -1,5 +1,5 @@
 use crate::blocs::widgets::TextBox;
-use crate::blocs::Skeleton;
+use crate::blocs::{Bloc, Skeleton};
 use pg_sdl::color::Colors;
 use std::collections::HashMap;
 // Login admin labo
@@ -24,7 +24,7 @@ impl VariableAssignmentBloc {
 		}
 	}
 	*/
-	pub fn repr(&self, blocs: &HashMap<u32, Skeleton>) -> String {
+	pub fn repr(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> String {
 		let name = if self.name.get_text().is_empty() { "-".to_string() } else { self.name.get_text() };
 		format!("VariableAssignment({}: ? = {})", name, self.bloc.slots[0].repr(blocs))
 	}
