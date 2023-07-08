@@ -1,4 +1,5 @@
 mod containers;
+mod print;
 mod variable_assignment;
 mod widgets;
 
@@ -16,16 +17,6 @@ use std::collections::HashMap;
 
 pub trait Bloc {
 	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
-}
-
-pub struct Print {
-	skeleton: Skeleton,
-}
-
-impl Bloc for Print {
-	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
-		self.skeleton.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) // * Self::MARGIN
-	}
 }
 
 /// A bloc represents a piece of code that can be executed.
