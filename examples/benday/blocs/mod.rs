@@ -14,10 +14,18 @@ use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
 use std::collections::HashMap;
 
-/// The bloc type is what differentiate blocs.
-pub enum BlocType {
-	VariableAssignment { name: TextBox },
-	Print,
+pub trait Bloc {
+	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
+}
+
+pub struct Print {
+	skeleton: Skeleton,
+}
+
+impl Bloc for Print {
+	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
+		self.skeleton.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) // * Self::MARGIN
+	}
 }
 
 /// A bloc represents a piece of code that can be executed.
@@ -29,21 +37,20 @@ pub enum BlocType {
 /// - vector of sequences
 ///
 /// And a bloc type, witch is an enum that contains data specific to the bloc.
-pub struct Bloc {
+pub struct Skeleton {
 	color: Color,
 	pub position: Point2<f64>,
 	pub size: Vector2<f64>,
 	hovered_on: HoveredOn,
 	slots: Vec<Slot>,
 	sequences: Vec<Sequence>,
-	bloc_type: BlocType,
 }
-impl Bloc {
+impl Skeleton {
 	const RADIUS: f64 = 8.0;
 	const MARGIN: f64 = 12.0;
 	const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
 
-	pub fn new_variable_assignment(color: Color, position: Point2<f64>, blocs: &HashMap<u32, Bloc>) -> Self {
+	pub fn new_variable_assignment(color: Color, position: Point2<f64>, blocs: &HashMap<u32, Skeleton>) -> Self {
 		// let color = hsv_color(30, 0.6, 1.0);
 		let mut bloc = Self {
 			color,
@@ -60,12 +67,12 @@ impl Bloc {
 		bloc
 	}
 
-	pub fn repr(&self, blocs: &HashMap<u32, Bloc>) -> String {
+	pub fn repr(&self, blocs: &HashMap<u32, Skeleton>) -> String {
 		format!("Bloc( {} )", self.slots.get(0).unwrap().repr(blocs))
 	}
 
 	/// Met à jour la taille du bloc et celles de ses enfants.
-	fn update_size(&mut self, blocs: &mut HashMap<u32, Bloc>) {
+	fn update_size(&mut self, blocs: &mut HashMap<u32, Skeleton>) {
 		/*
 		self.slots.iter().for_each(|slot| slot.update_size(blocs));
 		self.sequences.iter().for_each(|sequence| sequence.update_size(blocs));
@@ -73,10 +80,9 @@ impl Bloc {
 		 */
 	}
 	/// Retourne la taille du bloc.
-	fn get_size(&self, blocs: &HashMap<u32, Bloc>) -> Vector2<f64> {
+	fn get_size(&self, blocs: &HashMap<u32, Skeleton>) -> Vector2<f64> {
 		// panic!("'get_size' is not implemented in '{}' class", self.type_name())
-		let slot = self.slots.get(0).unwrap();
-		slot.get_size(blocs) + Vector2::new(2.0, 2.0) * Self::MARGIN
+		self.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) * Self::MARGIN
 	}
 
 	pub fn collide(&self, point: Vector2<f64>) -> bool {
@@ -86,7 +92,7 @@ impl Bloc {
 			&& point.y < self.position.y + self.size.y
 	}
 
-	pub fn collide_bloc(&self, bloc: &Bloc) -> bool {
+	pub fn collide_bloc(&self, bloc: &Skeleton) -> bool {
 		self.position.x < bloc.position.x + bloc.size.x
 			&& bloc.position.x < self.position.x + self.size.x
 			&& self.position.y < bloc.position.y + bloc.size.y
@@ -96,7 +102,7 @@ impl Bloc {
 	/// Retourne la référence du bloc en collision avec un point (hiérarchie)
 	///
 	/// et sur quelle partie du bloc est ce point (hovered on).
-	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Bloc>) -> Option<(Vec<u16>, HoveredOn)> {
+	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Skeleton>) -> Option<(Vec<u16>, HoveredOn)> {
 		if !self.collide(point) {
 			return None;
 		}
@@ -151,7 +157,7 @@ impl Bloc {
 	///
 	/// et la proportion de collision en hauteur (float).
 	fn hovered_slot(
-		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, blocs: &HashMap<u32, Bloc>,
+		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, blocs: &HashMap<u32, Skeleton>,
 	) -> Option<(Vec<u16>, f32)> {
 		if !(Self::MARGIN - size.x < position.x
 			&& position.x < self.size.x - 2.0 * Self::MARGIN
@@ -187,7 +193,7 @@ impl Bloc {
 	}
 
 	pub fn draw(
-		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, blocs: &HashMap<u32, Bloc>,
+		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, blocs: &HashMap<u32, Skeleton>,
 		selected: bool,
 	) {
 		// SHADOW

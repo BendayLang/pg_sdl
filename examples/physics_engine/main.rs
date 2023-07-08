@@ -275,10 +275,10 @@ fn main() {
 	let mut app: PgSdl = PgSdl::init("Spring test", resolution.x, resolution.y, Some(60), true, background_color);
 	let slider_type =
 		SliderType::Continuous { default_value: 0.0, display: Some(Box::new(|value| format!("{:.2}", value))) };
-	let slider = Slider::new(Colors::ORANGE, rect!(500, 50, 200, 32), Some(16), slider_type);
+	let slider = Slider::new(Colors::ORANGE, rect!(500, 50, 200, 32), 16, slider_type);
 	let button =
 		Button::new(Colors::LIGHT_YELLOW, rect!(750, 35, 120, 50), Some(9), TextStyle::default(), "Reset".to_string());
-	let switch = Switch::new(Colors::VIOLET, Colors::DARK_VIOLET, rect!(920, 40, 25, 40), Some(10));
+	let switch = Switch::new(Colors::VIOLET, Colors::DARK_VIOLET, rect!(920, 40, 25, 40), 10);
 	app.add_widgets(HashMap::from([
 		("reset", Box::new(button) as Box<dyn Widget>),
 		("speed", Box::new(slider) as Box<dyn Widget>),

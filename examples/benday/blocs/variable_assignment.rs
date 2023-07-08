@@ -1,5 +1,5 @@
 use crate::blocs::widgets::TextBox;
-use crate::blocs::Bloc;
+use crate::blocs::Skeleton;
 use pg_sdl::color::Colors;
 use std::collections::HashMap;
 // Login admin labo
@@ -9,7 +9,7 @@ use std::collections::HashMap;
 /// Bloc d’assignation de variable - la variable nommée sur le côté gauche du bloc
 /// prend la valeur de ce que contient le slot du côté droit.
 pub struct VariableAssignmentBloc {
-	bloc: Bloc,
+	bloc: Skeleton,
 	name: TextBox,
 	// type: str | None
 }
@@ -24,7 +24,7 @@ impl VariableAssignmentBloc {
 		}
 	}
 	*/
-	pub fn repr(&self, blocs: &HashMap<u32, Bloc>) -> String {
+	pub fn repr(&self, blocs: &HashMap<u32, Skeleton>) -> String {
 		let name = if self.name.get_text().is_empty() { "-".to_string() } else { self.name.get_text() };
 		format!("VariableAssignment({}: ? = {})", name, self.bloc.slots[0].repr(blocs))
 	}

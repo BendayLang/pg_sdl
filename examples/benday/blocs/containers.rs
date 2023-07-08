@@ -1,5 +1,5 @@
 use crate::blocs::widgets::TextBox;
-use crate::blocs::Bloc;
+use crate::blocs::{Bloc, Skeleton};
 use nalgebra::{Point2, Vector2};
 use pg_sdl::color::{darker, Colors};
 use pg_sdl::prelude::Camera;
@@ -42,7 +42,7 @@ impl Slot {
 		}
 	}
 
-	pub fn repr(&self, blocs: &HashMap<u32, Bloc>) -> String {
+	pub fn repr(&self, blocs: &HashMap<u32, Skeleton>) -> String {
 		if let Some(bloc_id) = self.bloc_id {
 			blocs.get(&bloc_id).unwrap().repr(blocs)
 		} else {
@@ -55,14 +55,15 @@ impl Slot {
 		}
 	}
 
-	pub fn get_size(&self, blocs: &HashMap<u32, Bloc>) -> Vector2<f64> {
+	pub fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
 		if let Some(bloc_id) = self.bloc_id {
 			blocs.get(&bloc_id).unwrap().size
 		} else {
 			self.text_box.get_size()
 		}
 	}
-	pub fn update_size(self, blocs: &mut HashMap<u32, Bloc>) {
+
+	pub fn update_size(self, blocs: &mut HashMap<u32, Skeleton>) {
 		/*
 		if let Some(bloc_id) = self.bloc_id {
 			blocs.get_mut(&bloc_id).unwrap().update_size(blocs);
@@ -82,7 +83,7 @@ impl Slot {
 
 	/// Renvoie la référence du bloc en collision avec un point et sur quelle partie du bloc est ce point.
 	pub fn collide_point(
-		&self, point: Vector2<f64>, slot_id: u16, blocs: &HashMap<u32, Bloc>,
+		&self, point: Vector2<f64>, slot_id: u16, blocs: &HashMap<u32, Skeleton>,
 	) -> Option<(Vec<u16>, HoveredOn)> {
 		if let Some(bloc_id) = self.bloc_id {
 			if let Some(bloc_collide) = blocs.get(&bloc_id).unwrap().collide_point(point, blocs) {
@@ -102,7 +103,7 @@ impl Slot {
 
 	/// Renvoie la référence du slot en collision avec un rectangle et la proportion de collision.
 	pub fn hovered_slot(
-		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, slot_id: u16, blocs: &HashMap<u32, Bloc>,
+		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, slot_id: u16, blocs: &HashMap<u32, Skeleton>,
 	) -> Option<(Vec<u16>, f32)> {
 		if !self.colliderect(position, size) {
 			return None;
@@ -155,7 +156,7 @@ impl Slot {
 	/// Affiche le slot.
 	pub fn draw(
 		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, position: Vector2<f64>,
-		hovered: bool, blocs: &HashMap<u32, Bloc>,
+		hovered: bool, blocs: &HashMap<u32, Skeleton>,
 	) {
 		if let Some(bloc_id) = self.bloc_id {
 			blocs.get(&bloc_id).unwrap().draw(canvas, text_drawer, camera, blocs, false);
@@ -192,12 +193,12 @@ impl Sequence {
 	const MARGIN: f64 = 7.0;
 	const RADIUS: f64 = 10.0;
 
-	pub fn repr(self, blocs: &HashMap<u32, Bloc>) -> String {
+	pub fn repr(self, blocs: &HashMap<u32, Skeleton>) -> String {
 		self.blocs_ids.iter().map(|bloc_id| blocs.get(bloc_id).unwrap().repr(blocs)).collect::<Vec<_>>().join(" , ")
 	}
 
 	/// Retourne la taille de la séquence.
-	fn get_size(self, blocs: &HashMap<u32, Bloc>) -> Vector2<f64> {
+	fn get_size(self, blocs: &HashMap<u32, Skeleton>) -> Vector2<f64> {
 		if self.blocs_ids.is_empty() {
 			Self::DEFAULT_SIZE
 		} else {
@@ -217,7 +218,7 @@ impl Sequence {
 	}
 
 	/// Renvoie la position du bloc donné en référence à la séquence parent.
-	fn bloc_position(&self, nth_bloc: usize, blocs: &HashMap<u32, Bloc>) -> Vector2<f64> {
+	fn bloc_position(&self, nth_bloc: usize, blocs: &HashMap<u32, Skeleton>) -> Vector2<f64> {
 		Vector2::new(
 			0.0,
 			(0..nth_bloc).map(|i| blocs.get(self.blocs_ids.get(i).unwrap()).unwrap().size.y + Self::MARGIN).sum(),
@@ -225,7 +226,7 @@ impl Sequence {
 	}
 
 	/// Met à jour la taille de la séquence.
-	pub fn update_size(&self, blocs: &mut HashMap<u32, Bloc>) {
+	pub fn update_size(&self, blocs: &mut HashMap<u32, Skeleton>) {
 		// self.blocs_ids.iter().for_each(|bloc_id| blocs.get(bloc_id).unwrap().update_size(blocs));
 	}
 
@@ -241,7 +242,7 @@ impl Sequence {
 
 	/// Renvoie la référence du bloc en collision avec un point et sur quelle partie du bloc est ce point.
 	pub fn collide_point(
-		&self, point: Vector2<f64>, sequence_id: u16, blocs: &HashMap<u32, Bloc>,
+		&self, point: Vector2<f64>, sequence_id: u16, blocs: &HashMap<u32, Skeleton>,
 	) -> Option<(Vec<u16>, HoveredOn)> {
 		for (i, bloc_id) in self.blocs_ids.iter().rev().enumerate() {
 			let nth_bloc = self.blocs_ids.len() - 1 - i;
@@ -262,7 +263,7 @@ impl Sequence {
 
 	/// Renvoie la référence du slot en collision avec un rectangle et la proportion de collision.
 	pub fn hovered_slot(
-		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, sequence_id: u16, blocs: &HashMap<u32, Bloc>,
+		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, sequence_id: u16, blocs: &HashMap<u32, Skeleton>,
 	) -> Option<(Vec<u16>, f32)> {
 		if !self.colliderect(position, size) {
 			return None;
@@ -329,7 +330,7 @@ impl Sequence {
 	}
 
 	/// Retourne l’id du gap survolé par un point donné (pour savoir où ajouter un nouveau bloc).
-	fn hovered_gap(self, point: Point2<f64>, blocs: &HashMap<u32, Bloc>) -> usize {
+	fn hovered_gap(self, point: Point2<f64>, blocs: &HashMap<u32, Skeleton>) -> usize {
 		if self.blocs_ids.is_empty() {
 			return 0;
 		} else {
@@ -373,7 +374,7 @@ impl Sequence {
 	/// Affiche la séquence.
 	pub fn draw(
 		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, position: Vector2<f64>,
-		hovered: bool, blocs: &HashMap<u32, Bloc>,
+		hovered: bool, blocs: &HashMap<u32, Skeleton>,
 	) {
 		camera.fill_rounded_rect(canvas, darker(self.color, 0.7), Point2::from(position), self.size, Self::RADIUS);
 

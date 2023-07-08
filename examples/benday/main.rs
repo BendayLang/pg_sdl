@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_variables)]
 mod blocs;
 use crate::blocs::Bloc;
+use crate::blocs::Skeleton;
 use nalgebra::{Point2, Vector2};
 use pg_sdl::prelude::*;
 use sdl2::ttf::FontStyle;
@@ -15,7 +16,8 @@ pub struct MyApp {
 	camera: Camera,
 	id_counter: u32,
 	app_state: AppState,
-	blocs: HashMap<u32, Bloc>,
+	blocs: HashMap<u32, Skeleton>,
+	blocs_bis: HashMap<u32, Box<dyn Bloc>>,
 	blocs_order: Vec<u32>,
 }
 
@@ -32,7 +34,7 @@ impl App for MyApp {
 					self.id_counter += 1;
 					self.blocs.insert(
 						id,
-						Bloc::new_variable_assignment(
+						Skeleton::new_variable_assignment(
 							hsv_color((id * 30) as u16, 1.0, 1.0),
 							Point2::new(8.0, 10.0) * id as f64,
 							&self.blocs,
@@ -69,7 +71,7 @@ impl App for MyApp {
 
 				if input.mouse.left_button.is_released() {
 					let moving_bloc = self.blocs.get(&moving_bloc_id).unwrap();
-					let maybe_parent_bloc: Option<&Bloc> =
+					let maybe_parent_bloc: Option<&Skeleton> =
 						self.blocs.values().into_iter().find(|bloc| moving_bloc.collide_bloc(&bloc));
 
 					let collide_with: Option<u32> = {
