@@ -16,7 +16,7 @@ use sdl2::video::Window;
 use std::collections::HashMap;
 
 pub trait Bloc {
-	fn new(position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self;
+	// fn new(position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self;
 	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
 	fn slot_position(&self, slot_id: u16) -> Vector2<f64>;
 	fn sequence_position(&self, sequence_id: u16) -> Vector2<f64>;
@@ -46,23 +46,11 @@ pub struct Skeleton {
 impl Skeleton {
 	const RADIUS: f64 = 8.0;
 	const MARGIN: f64 = 12.0;
+	const INNER_MARGIN: f64 = 6.0;
 	const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
 
-	pub fn new_variable_assignment(color: Color, position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self {
-		// let color = hsv_color(30, 0.6, 1.0);
-		let mut bloc = Self {
-			color,
-			position,
-			size: Vector2::zeros(),
-			hovered_on: HoveredOn::None,
-			slots: vec![Slot::new(color, "value")],
-			sequences: Vec::new(),
-			bloc_type: BlocType::VariableAssignment {
-				name: TextBox::new(Slot::DEFAULT_SIZE, paler(color, 0.1), "name".to_string()),
-			},
-		};
-		bloc.size = bloc.get_size(blocs);
-		bloc
+	pub fn new(color: Color, position: Point2<f64>, slots: Vec<Slot>, sequences: Vec<Sequence>) -> Self {
+		Self { color, position, size: Vector2::zeros(), hovered_on: HoveredOn::None, slots, sequences }
 	}
 
 	pub fn repr(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> String {
