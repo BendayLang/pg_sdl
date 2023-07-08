@@ -1,8 +1,9 @@
-use crate::canvas::draw_rect;
+use crate::canvas::{draw_rect, draw_rounded_rect, fill_rect, fill_rounded_rect};
 use crate::input::{KeyState, KeysState, Shortcut};
 use crate::prelude::*;
 use crate::widgets::{HOVER, PUSH};
 use sdl2::keyboard::Keycode;
+use sdl2::render::BlendMode;
 
 pub struct TextInputStyle {
 	background_color: Color,
@@ -34,7 +35,7 @@ pub struct TextInput {
 	pub content: String,
 	hovered: bool,
 	is_focused: bool,
-	carrot_last_update: f32,
+	carrot_last_update: f64,
 	carrot_position: usize,
 	carrot_visible: bool,
 	selection: Option<(usize, usize)>,
@@ -78,7 +79,7 @@ impl TextInput {
 }
 
 impl Widget for TextInput {
-	fn update(&mut self, input: &Input, _delta: f32, text_drawer: &mut TextDrawer) -> bool {
+	fn update(&mut self, input: &Input, _delta: f64, text_drawer: &mut TextDrawer) -> bool {
 		let mut changed = false;
 		self.state.update();
 
@@ -136,7 +137,6 @@ impl Widget for TextInput {
 					}
 					changed = true;
 				}
-				//println!("Selection: {:?}", self.selection);
 			}
 		}
 
@@ -243,14 +243,22 @@ impl Widget for TextInput {
 		// Box
 		let background_color =
 			if self.hovered { self.style.background_hovered_color } else { self.style.background_color };
-		let contour_color = if self.is_focused { self.style.contour_focused_color } else { self.style.contour_color };
-		fill_rect(canvas, self.rect, background_color, self.style.corner_radius);
-		draw_rect(canvas, self.rect, self.style.contour_color, self.style.corner_radius);
+		if let Some(corner_radius) = self.style.corner_radius {
+			fill_rounded_rect(canvas, self.rect, background_color, corner_radius);
+			draw_rounded_rect(canvas, self.rect, self.style.contour_color, corner_radius);
+		} else {
+			fill_rect(canvas, self.rect, background_color);
+			draw_rect(canvas, self.rect, self.style.contour_color);
+		}
+
 		if self.is_focused {
 			let rect =
 				Rect::new(self.rect.left() + 1, self.rect.top() + 1, self.rect.width() - 2, self.rect.height() - 2);
-			let corner_radius = self.style.corner_radius.map(|r| r - 1);
-			draw_rect(canvas, rect, self.style.contour_focused_color, corner_radius);
+			if let Some(corner_radius) = self.style.corner_radius {
+				draw_rounded_rect(canvas, rect, self.style.contour_focused_color, corner_radius - 1);
+			} else {
+				draw_rect(canvas, rect, self.style.contour_focused_color)
+			}
 		}
 
 		// Text
@@ -274,7 +282,7 @@ impl Widget for TextInput {
 
 			let carrot_rect =
 				Rect::new(self.rect.left() + 5 + carrot_x_position, self.rect.top() + 5, 1, self.rect.height() - 10);
-			fill_rect(canvas, carrot_rect, Colors::BLACK, None);
+			fill_rect(canvas, carrot_rect, Colors::BLACK);
 		}
 
 		// Selection
@@ -286,7 +294,11 @@ impl Widget for TextInput {
 				text_drawer.text_size(&self.style.text_style, &self.content[selection.0..selection.1]).0 as u32,
 				self.rect.height() - 10,
 			);
-			fill_rect(canvas, selection_rect, Colors::BLUE, None);
+			let mut selection_color = Colors::LIGHT_BLUE;
+			selection_color.a = 100;
+			canvas.set_blend_mode(BlendMode::Mod);
+			fill_rect(canvas, selection_rect, selection_color);
+			canvas.set_blend_mode(BlendMode::None);
 		}
 	}
 }

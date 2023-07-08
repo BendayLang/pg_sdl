@@ -25,7 +25,6 @@ pub mod widgets;
 pub mod prelude {
 	pub use crate::app::{App, PgSdl};
 	pub use crate::camera::Camera;
-	pub use crate::canvas::{fill_background, fill_rect};
 	pub use crate::color::{darker, hsv_color, paler, Colors};
 	pub use crate::draw_circle::{draw_circle, fill_circle};
 	pub use crate::input::Input;

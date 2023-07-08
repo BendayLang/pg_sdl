@@ -1,4 +1,4 @@
-use crate::canvas::draw_rect;
+use crate::canvas::{draw_rect, draw_rounded_rect, fill_rect, fill_rounded_rect};
 use crate::prelude::*;
 use crate::{
 	color::{darker, Colors},
@@ -45,7 +45,7 @@ impl Button {
 }
 
 impl Widget for Button {
-	fn update(&mut self, input: &Input, _delta: f32, _text_drawer: &mut TextDrawer) -> bool {
+	fn update(&mut self, input: &Input, _delta: f64, _text_drawer: &mut TextDrawer) -> bool {
 		let mut changed = false;
 		self.state.update();
 
@@ -76,8 +76,13 @@ impl Widget for Button {
 			self.color
 		};
 
-		fill_rect(canvas, self.rect, color, self.corner_radius);
-		draw_rect(canvas, self.rect, Colors::BLACK, self.corner_radius);
+		if let Some(corner_radius) = self.corner_radius {
+			fill_rounded_rect(canvas, self.rect, color, corner_radius);
+			draw_rounded_rect(canvas, self.rect, Colors::BLACK, corner_radius);
+		} else {
+			fill_rect(canvas, self.rect, color);
+			draw_rect(canvas, self.rect, Colors::BLACK);
+		};
 
 		text_drawer.draw(canvas, self.rect.center(), &self.text_style, &self.text, Align::Center);
 	}

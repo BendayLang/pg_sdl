@@ -12,9 +12,9 @@ pub struct MyApp {
 // To call the run function of PgSdl, we need to implement the App trait for our app-state struct
 impl App for MyApp {
 	// The update function is called every frame, and is used to update the app-state
-	fn update(&mut self, _delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
+	fn update(&mut self, _delta: f64, input: &Input, widgets: &mut Widgets) -> bool {
 		let mut changed = false;
-		// if not widgets_changed { TODO implement that <-
+		// if widgets_not_changed { TODO implement that <-
 		changed |= self.camera.update(input);
 		// }
 
@@ -33,24 +33,9 @@ impl App for MyApp {
 	// The draw function is called every frame, if update returned true or any widget has changed
 	// It is called just after the update function
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer) {
-		// We can put any custom drawing code here
-		if self.draw_circle {
-			canvas.set_draw_color(Colors::VIOLET);
-			draw_circle(canvas, point!(500, 400), 100, 20);
-
-			canvas.set_draw_color(Colors::LIGHT_RED);
-			let width: u32 = 20;
-			let rect = rect!(650, 350, 150, 100);
-			let rects = (0..width)
-				.map(|i| rect!(rect.x as u32 + i, rect.y as u32 + i, rect.width() - 2 * i, rect.height() - 2 * i))
-				.collect::<Vec<Rect>>();
-			canvas.draw_rects(&rects).unwrap();
-		}
-
-		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.9), 200.0);
-		// self.camera.draw_vertical_line(canvas, darker(self.background_color, 0.7), 220.0);
 		self.camera.draw_grid(canvas, text_drawer, self.background_color, true, false);
 
+		// We can put any custom drawing code here
 		let vertices = Vec::from([
 			Point2::new(500.0, 200.0),
 			Point2::new(600.0, 200.0),
@@ -60,8 +45,23 @@ impl App for MyApp {
 		self.camera.fill_polygon(canvas, Colors::LIGHT_BLUE, &vertices);
 		self.camera.draw_polygon(canvas, Colors::BLACK, &vertices);
 
-		self.camera.fill_rectangle(canvas, Colors::DARK_CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
-		self.camera.draw_rectangle(canvas, Colors::CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
+		self.camera.fill_rect(canvas, Colors::DARK_CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
+		self.camera.draw_rect(canvas, Colors::CYAN, Point2::new(350.0, 300.0), Vector2::new(80.0, 50.0));
+
+		self.camera.fill_rounded_rect(
+			canvas,
+			Colors::YELLOW,
+			Point2::new(150.0, 200.0),
+			Vector2::new(80.0, 150.0),
+			30.0,
+		);
+		self.camera.draw_rounded_rect(
+			canvas,
+			Colors::DARK_ORANGE,
+			Point2::new(150.0, 200.0),
+			Vector2::new(80.0, 150.0),
+			30.0,
+		);
 
 		self.camera.fill_ellipse(canvas, Colors::DARK_GREEN, Point2::new(700.0, 300.0), Vector2::new(100.0, 60.0));
 		self.camera.draw_ellipse(canvas, Colors::LIGHT_GREEN, Point2::new(700.0, 300.0), Vector2::new(100.0, 60.0));
@@ -102,7 +102,7 @@ fn main() {
 			Box::new(Slider::new(
 				Colors::ROYAL_BLUE,
 				rect!(110, 220, 200, 30),
-				Some(9),
+				9,
 				SliderType::Continuous { display: None, default_value: 0.5 },
 			)),
 		)
@@ -116,16 +116,11 @@ fn main() {
 		)
 		.add_widget(
 			"switch",
-			Box::new(Switch::new(Colors::LIGHT_GREEN, Colors::LIGHT_RED, rect!(200, 150, 50, 30), Some(10))),
+			Box::new(Switch::new(Colors::LIGHT_GREEN, Colors::LIGHT_RED, rect!(200, 150, 50, 30), 10)),
 		)
 		.add_widget(
 			"switch2",
-			Box::new(Switch::new(
-				Colors::LIGHT_ORANGE,
-				paler(Colors::LIGHT_ORANGE, 0.25),
-				rect!(280, 140, 30, 50),
-				Some(10),
-			)),
+			Box::new(Switch::new(Colors::LIGHT_ORANGE, paler(Colors::LIGHT_ORANGE, 0.25), rect!(280, 140, 30, 50), 10)),
 		);
 
 	// Finally we run the app, that take a mutable reference to our custom app-state struct

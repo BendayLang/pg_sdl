@@ -7,17 +7,20 @@ use constrains::{Constrain, LengthConstraint, LineConstraint, SlidingConstraint}
 use force_generators::{ForceGenerator, Gravity, Spring};
 use linear_alogithmes::gauss_seidel;
 use nalgebra;
+use nalgebra::{Point2, Vector2};
 use ndarray::{Array1, Array2};
 use particle::Particle;
 use pg_sdl::prelude::*;
-use pg_sdl::vector2::Vec2;
+use pg_sdl::widgets::switch::Switch;
 use pg_sdl::widgets::Widgets;
 use sdl2::ttf::FontStyle;
 use std::collections::HashMap;
 
 /// PhysicsApp is a pyhsics engine app made to test any kind of 2D physics.
 pub struct PhysicsApp {
-	time: f32,
+	camera: Camera,
+	background_color: Color,
+	time: f64,
 	original_particles: Vec<Particle>,
 	particles: Vec<Particle>,
 	constrains: Vec<Box<dyn Constrain>>,
@@ -32,19 +35,21 @@ impl PhysicsApp {
 	const KD: f64 = 1.0;
 
 	fn new(
-		particles: Vec<Particle>, constrains: Vec<Box<dyn Constrain>>, force_generators: Vec<Box<dyn ForceGenerator>>,
-		draw_forces: bool,
+		camera: Camera, background_color: Color, particles: Vec<Particle>, constrains: Vec<Box<dyn Constrain>>,
+		force_generators: Vec<Box<dyn ForceGenerator>>,
 	) -> Self {
 		// Add a particle and a spring for the mouse
 		let mut particles = particles;
-		particles.insert(0, Particle::new(1.0, Vec2::ZERO, 0.0, Colors::GREY));
-		let mouse_spring = Spring::new(0, 0, 100.0, 10.0, 0.0, 25.0, Colors::LIGHT_GREY);
+		particles.insert(0, Particle::new(1.0, Point2::origin(), 0.0, Colors::GREY));
+		let mouse_spring = Spring::new(0, 0, 100.0, 10.0, 0.0, 30.0, Colors::LIGHT_GREY);
 
 		// Initialize the constrains
 		let mut constrains = constrains;
 		constrains.iter_mut().for_each(|constrain| constrain.init(&particles));
 
 		Self {
+			camera,
+			background_color,
 			time: 0.0,
 			original_particles: particles.iter().map(|particle| particle.clone()).collect(),
 			particles,
@@ -52,7 +57,7 @@ impl PhysicsApp {
 			force_generators,
 			last_lambda: None,
 			mouse_spring,
-			draw_forces,
+			draw_forces: false,
 		}
 	}
 
@@ -63,9 +68,9 @@ impl PhysicsApp {
 		}
 
 		if input.mouse.left_button.is_pressed() {
-			let mouse_position = Vec2::from(input.mouse.position);
+			let mouse_position = input.mouse.position;
 			for (index, particle) in self.particles.iter().enumerate() {
-				if particle.collide_point(mouse_position) {
+				if particle.collide_point(self.camera.transform.inverse() * mouse_position.cast()) {
 					self.mouse_spring.set_end2_index(index);
 					break;
 				}
@@ -75,7 +80,7 @@ impl PhysicsApp {
 		}
 	}
 
-	fn update_physics(&mut self, delta: f32) {
+	fn update_physics(&mut self, delta: f64) {
 		// 1 - Clear forces
 		self.particles.iter_mut().for_each(|particle| {
 			particle.clear_force_accumulator();
@@ -96,7 +101,7 @@ impl PhysicsApp {
 		});
 	}
 
-	fn get_constrain_forces(&mut self, threshold: f64) -> Vec<Vec2> {
+	fn get_constrain_forces(&mut self, threshold: f64) -> Vec<Vector2<f64>> {
 		let particle_size = 2 * self.particles.len();
 		let constrain_size = self.constrains.len();
 
@@ -167,9 +172,9 @@ impl PhysicsApp {
 		self.last_lambda = Some(lambda.into_owned());
 
 		// let lambda = Array1::<f64>::zeros(particle_size);
-		let mut reaction_forces = Vec::<Vec2>::new();
+		let mut reaction_forces = Vec::<Vector2<f64>>::new();
 		for (index, _particle) in self.particles.iter().enumerate() {
-			let reaction_force = Vec2::new(reaction_vector[2 * index] as f32, reaction_vector[2 * index + 1] as f32);
+			let reaction_force = Vector2::new(reaction_vector[2 * index] as f64, reaction_vector[2 * index + 1] as f64);
 			reaction_forces.push(reaction_force);
 		}
 
@@ -185,34 +190,43 @@ impl PhysicsApp {
 }
 
 impl App for PhysicsApp {
-	fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool {
+	fn update(&mut self, delta: f64, input: &Input, widgets: &mut Widgets) -> bool {
+		let mut changed = false;
 		self.manage_input(input, widgets);
 
-		let speed = widgets.get_slider("speed").get_value();
-		self.time += delta * speed;
+		self.draw_forces = widgets.get::<Switch>("switch").unwrap().is_switched();
 
-		let changed = speed != 0.0;
+		let speed = widgets.get_slider("speed").get_value() as f64;
+		self.time += delta * speed as f64;
+
+		changed |= speed != 0.0;
 		if changed {
 			self.update_physics(0.02 * speed);
 		}
 
 		// Moves the selected particle to the mouse position and sets its velocity to the mouse velocity
-		self.particles[0].set_position(Vec2::from(input.mouse.position));
+		self.particles[0].set_position(self.camera.transform.inverse() * input.mouse.position.cast());
 		let velocity = self.particles[0].get_velocity();
-		let mouse_velocity = Vec2::from(input.mouse.delta) / delta;
+		let mouse_velocity = input.mouse.delta.cast() / delta;
 		self.particles[0].set_velocity(velocity * 0.9 + mouse_velocity * 0.1);
 
+		if self.mouse_spring.get_end2_index() == 0 {
+			changed |= self.camera.update(input);
+		}
 		changed
 	}
 
-	fn draw(&mut self, canvas: &mut Canvas<Window>, text_drawer: &mut TextDrawer) {
-		self.particles.iter().for_each(|particle| particle.draw(canvas));
-		self.constrains.iter().for_each(|constrain| constrain.draw(canvas, &self.particles));
-		self.force_generators.iter().for_each(|force_generator| force_generator.draw(canvas, &self.particles));
+	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer) {
+		self.camera.draw_grid(canvas, text_drawer, self.background_color, true, false);
+		self.particles.iter().for_each(|particle| particle.draw(canvas, &self.camera));
+		self.constrains.iter().for_each(|constrain| constrain.draw(canvas, &self.camera, &self.particles));
+		self.force_generators
+			.iter()
+			.for_each(|force_generator| force_generator.draw(canvas, &self.camera, &self.particles));
 		if self.draw_forces {
-			self.particles.iter().for_each(|particle| particle.draw_forces(canvas, 0.05));
+			self.particles.iter().for_each(|particle| particle.draw_forces(canvas, &self.camera, 0.05));
 		}
-		self.mouse_spring.draw(canvas, &self.particles);
+		self.mouse_spring.draw(canvas, &self.camera, &self.particles);
 
 		text_drawer.draw(
 			canvas,
@@ -221,54 +235,55 @@ impl App for PhysicsApp {
 			&format!("time {:.2}", self.time),
 			Align::TopLeft,
 		);
+		/*
 		let p = Vec2::new(900.0, 300.0);
 		let delta = self.particles[2].get_position() - self.particles[1].get_position();
 		let d = p + Vec2::new_y((150.0 - delta.length()) * 1.0);
 		DrawRenderer::line(canvas, p.x as i16, p.y as i16, d.x as i16, d.y as i16, Color::BLACK).unwrap();
+		*/
 	}
 }
 
 fn main() {
-	let mut app: PgSdl = PgSdl::init("Spring test", 1200, 720, Some(60), true, Colors::SKY_BLUE);
+	let resolution = Vector2::new(1200, 700);
+	let background_color = Colors::SKY_BLUE;
 
-	let slider_type =
-		SliderType::Continuous { default_value: 0.0, display: Some(Box::new(|value| format!("{:.2}", value))) };
-	let slider = Slider::new(Colors::ORANGE, rect!(500, 50, 200, 32), Some(16), slider_type);
-	let reset_button =
-		Button::new(Colors::LIGHT_YELLOW, rect!(750, 35, 120, 50), Some(9), TextStyle::default(), "Reset".to_string());
-	app.add_widgets(HashMap::from([
-		("reset", Box::new(reset_button) as Box<dyn Widget>),
-		("speed", Box::new(slider) as Box<dyn Widget>),
-	]));
+	let camera = Camera::new(resolution, 6, 3.0, 5.0, -5000.0, 5000.0, -5000.0, 5000.0);
 
 	let mut my_app = PhysicsApp::new(
+		camera,
+		background_color,
 		Vec::from([
-			Particle::new(1.0, Vec2::new(600.0, 300.0), 25.0, Colors::RED),
-			Particle::new(1.0, Vec2::new(750.0, 300.0), 25.0, Colors::RED),
+			Particle::new(1.0, Point2::new(0.0, 0.0), 25.0, Colors::RED),
+			Particle::new(1.0, Point2::new(200.0, 0.0), 25.0, Colors::RED),
 			// Particle::new(1.0, Vec2::new(750.0, 450.0), 25.0, Colors::RED),
 		]),
 		Vec::from([
 			// Box::new(FixedConstraint::new(1, Colors::BLUE)) as Box<dyn Constrain>,
 			// Box::new(ParabolaConstraint::new(1, Vec2::new_x(-30.0), 0.0, Colors::BLACK)) as Box<dyn Constrain>,
-			Box::new(LineConstraint::new(1, Vec2::X, Colors::BLUE)) as Box<dyn Constrain>,
-			Box::new(LineConstraint::new(1, Vec2::Y, Colors::GREEN)) as Box<dyn Constrain>,
-			Box::new(LengthConstraint::new(1, 2, 10.0, Colors::BROWN)),
+			Box::new(LineConstraint::new(1, Vector2::new(1.0, 0.0), Colors::BLUE)) as Box<dyn Constrain>,
+			Box::new(LineConstraint::new(1, Vector2::new(0.0, 1.0), Colors::GREEN)) as Box<dyn Constrain>,
+			// Box::new(LengthConstraint::new(1, 2, 10.0, Colors::BROWN)),
 			// Box::new(SlidingConstraint::new(2, 3, Vec2::from_angle_deg(2.0))),
 		]),
 		Vec::from([
-			Box::new(Gravity::new(Vec2::new_y(800.0))) as Box<dyn ForceGenerator>,
-			// Box::new(Spring::new(1, 2, 30.0, 1.0, 150.0, 30.0, Colors::BEIGE)),
+			Box::new(Gravity::new(Vector2::new(0.0, 800.0))) as Box<dyn ForceGenerator>,
+			Box::new(Spring::new(1, 2, 30.0, 1.0, 150.0, 50.0, Colors::BEIGE)),
 		]),
-		true,
 	);
-	// app.run(&mut my_app);
-	let a_vec2 = nalgebra::Vector2::new(10.0, 2.0);
-	let b_matrix2x2 = nalgebra::Matrix2::new(0.0, -1.0, 1.0, 0.0);
-	let c_vec2 = b_matrix2x2 * a_vec2;
-	let length = a_vec2.norm();
-	println!("a_vec2 = {}", a_vec2);
-	println!("b_matrix2x2 = {}", b_matrix2x2);
-	println!("c_vec2 = {}", c_vec2);
-	println!("length = {}", length);
-	// TODO replace Vec2 by nalgebra::Vector2
+
+	let mut app: PgSdl = PgSdl::init("Spring test", resolution.x, resolution.y, Some(60), true, background_color);
+	let slider_type =
+		SliderType::Continuous { default_value: 0.0, display: Some(Box::new(|value| format!("{:.2}", value))) };
+	let slider = Slider::new(Colors::ORANGE, rect!(500, 50, 200, 32), Some(16), slider_type);
+	let button =
+		Button::new(Colors::LIGHT_YELLOW, rect!(750, 35, 120, 50), Some(9), TextStyle::default(), "Reset".to_string());
+	let switch = Switch::new(Colors::VIOLET, Colors::DARK_VIOLET, rect!(920, 40, 25, 40), Some(10));
+	app.add_widgets(HashMap::from([
+		("reset", Box::new(button) as Box<dyn Widget>),
+		("speed", Box::new(slider) as Box<dyn Widget>),
+		("switch", Box::new(switch) as Box<dyn Widget>),
+	]));
+
+	app.run(&mut my_app);
 }

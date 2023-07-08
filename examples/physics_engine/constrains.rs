@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
 use crate::Particle;
+use nalgebra::{Matrix2, Point2, Transform2, Vector2};
+use pg_sdl::camera::Camera;
 use pg_sdl::color::Colors;
-use pg_sdl::vector2::Vec2;
+use pg_sdl::vector2::Vector2Plus;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
@@ -11,8 +13,8 @@ use sdl2::video::Window;
 /// Returns the t value of the closest point on a curve to a given point using gradient descent.
 ///
 /// The curve is defined by a function that takes a parameter t and returns a point.
-pub fn nearest_point_on_curve(point: Vec2, curve: Box<dyn Fn(f32) -> Vec2>) -> f32 {
-	let function = |t: f32| ((*curve)(t) - point).length();
+pub fn nearest_point_on_curve(point: Point2<f64>, curve: Box<dyn Fn(f64) -> Point2<f64>>) -> f64 {
+	let function = |t: f64| ((*curve)(t) - point).norm();
 	let mut x = 0.0; // initial input value
 	let learning_rate = 0.002; // hyperparameter controlling step size
 
@@ -33,26 +35,26 @@ pub trait Constrain {
 	/// For a curve, let's say d is the vector from the particle to the closest point on the curve.
 	///
 	/// Here, the constraint function is the length of d.
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32;
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64;
 	/// The derivative of the constraint function is such that it returns 0 when the constraint is respected.
 	///
 	/// For a curve, let's say d is the vector from the particle to the closest point on the curve.
 	///
 	/// Here, the derivative of the constraint function is the speed of the particle along d.
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32;
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64;
 	/// The jacobian blocs of the constraint function (dC/dx)
 	///
 	/// For a curve, let's say d is the vector from the particle to the closest point on the curve.
 	///
 	/// Here, the jacobian blocs of the constraint function are the components of d (d.x, d.y).
-	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)>;
+	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)>;
 	/// The jacobian blocs of the constraint derivative function (dC'/dx)
 	///
 	/// For a curve, let's say d is the vector from the particle to the closest point on the curve.
 	///
 	/// Here, the derivative of the jacobian blocs of the constraint function are null.
-	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)>;
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>);
+	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)>;
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>);
 }
 
 /// A rod is a constraint.
@@ -63,30 +65,30 @@ pub trait Constrain {
 pub struct LengthConstraint {
 	end1_index: usize,
 	end2_index: usize,
-	length: f32,
-	diameter: f32,
+	length: f64,
+	diameter: f64,
 	color: Color,
 }
 impl LengthConstraint {
-	pub fn new(end1_index: usize, end2_index: usize, diameter: f32, color: Color) -> Self {
+	pub fn new(end1_index: usize, end2_index: usize, diameter: f64, color: Color) -> Self {
 		Self { end1_index, end2_index, length: 0.0, diameter, color }
 	}
 }
 impl Constrain for LengthConstraint {
 	fn init(&mut self, particles: &Vec<Particle>) {
-		self.length = (particles[self.end2_index].get_position() - particles[self.end1_index].get_position()).length();
+		self.length = (particles[self.end2_index].get_position() - particles[self.end1_index].get_position()).norm();
 	}
 
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64 {
 		let delta = particles[self.end2_index].get_position() - particles[self.end1_index].get_position();
-		delta.length_squared() - self.length.powf(2.0)
+		delta.norm_squared() - self.length.powf(2.0)
 	}
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64 {
 		let delta = particles[self.end2_index].get_position() - particles[self.end1_index].get_position();
 		let delta_velocity = particles[self.end2_index].get_velocity() - particles[self.end1_index].get_velocity();
-		delta.dot(delta_velocity)
+		delta.dot(&delta_velocity)
 	}
-	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let delta = particles[self.end2_index].get_position() - particles[self.end1_index].get_position();
 		Vec::from([
 			(self.end1_index * 2, -delta.x),
@@ -95,7 +97,7 @@ impl Constrain for LengthConstraint {
 			(self.end2_index * 2 + 1, delta.y),
 		])
 	}
-	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let delta_velocity = particles[self.end2_index].get_velocity() - particles[self.end1_index].get_velocity();
 		Vec::from([
 			(self.end1_index * 2, -delta_velocity.x),
@@ -105,11 +107,15 @@ impl Constrain for LengthConstraint {
 		])
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>) {
 		let start_position = particles[self.end1_index].get_position();
 		let end_position = particles[self.end2_index].get_position();
+		let start_position = camera.transform * start_position;
+		let end_position = camera.transform * end_position;
+		let radius = camera.transform.scaling() * self.diameter / 2.0;
+
 		let x_dir = end_position - start_position;
-		let y_dir = x_dir.perpendicular() * self.diameter / 2.0;
+		let y_dir = x_dir.perpendicular() * radius;
 		let start1 = start_position + y_dir;
 		let start2 = start_position - y_dir;
 		let end1 = end_position + y_dir;
@@ -119,44 +125,26 @@ impl Constrain for LengthConstraint {
 			canvas,
 			start_position.x as i16,
 			start_position.y as i16,
-			self.diameter as i16 / 2,
+			radius as i16,
 			self.color,
 		)
 		.unwrap();
-		DrawRenderer::circle(
-			canvas,
-			start_position.x as i16,
-			start_position.y as i16,
-			self.diameter as i16 / 2,
-			Colors::BLACK,
-		)
-		.unwrap();
-		DrawRenderer::filled_circle(
-			canvas,
-			end_position.x as i16,
-			end_position.y as i16,
-			self.diameter as i16 / 2,
-			self.color,
-		)
-		.unwrap();
-		DrawRenderer::circle(
-			canvas,
-			end_position.x as i16,
-			end_position.y as i16,
-			self.diameter as i16 / 2,
-			Colors::BLACK,
-		)
-		.unwrap();
-		// draw thick lines between the ends
-		DrawRenderer::circle(canvas, start_position.x as i16, start_position.y as i16, self.length as i16, self.color)
+		DrawRenderer::circle(canvas, start_position.x as i16, start_position.y as i16, radius as i16, Colors::BLACK)
 			.unwrap();
+		DrawRenderer::filled_circle(canvas, end_position.x as i16, end_position.y as i16, radius as i16, self.color)
+			.unwrap();
+		DrawRenderer::circle(canvas, end_position.x as i16, end_position.y as i16, radius as i16, Colors::BLACK)
+			.unwrap();
+		// draw thick lines between the ends
+		let rad = (camera.transform.scaling() * self.length) as i16;
+		DrawRenderer::circle(canvas, start_position.x as i16, start_position.y as i16, rad, self.color).unwrap();
 		DrawRenderer::thick_line(
 			canvas,
 			start_position.x as i16,
 			start_position.y as i16,
 			end_position.x as i16,
 			end_position.y as i16,
-			self.diameter as u8,
+			(radius * 2.0) as u8,
 			self.color,
 		)
 		.unwrap();
@@ -170,12 +158,12 @@ impl Constrain for LengthConstraint {
 /// A fixed constraint maintains a particle at a fixed position.
 pub struct FixedConstraint {
 	particle_index: usize,
-	position: Vec2,
+	position: Point2<f64>,
 	color: Color,
 }
 impl FixedConstraint {
 	pub fn new(particle: usize, color: Color) -> Self {
-		Self { particle_index: particle, position: Vec2::ZERO, color }
+		Self { particle_index: particle, position: Point2::origin(), color }
 	}
 }
 impl Constrain for FixedConstraint {
@@ -183,26 +171,26 @@ impl Constrain for FixedConstraint {
 		self.position = particles[self.particle_index].get_position();
 	}
 
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64 {
 		let delta = particles[self.particle_index].get_position() - self.position;
-		delta.length_squared() / 2.0
+		delta.norm_squared() / 2.0
 	}
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64 {
 		let delta = particles[self.particle_index].get_position() - self.position;
 		let velocity = particles[self.particle_index].get_velocity();
-		delta.length() * velocity.length()
+		delta.norm() * velocity.norm()
 	}
-	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let delta = particles[self.particle_index].get_position() - self.position;
 		Vec::from([(self.particle_index * 2, delta.x), (self.particle_index * 2 + 1, delta.y)])
 	}
-	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_derivative_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		// Vec::new()
 		let velocity = particles[self.particle_index].get_velocity();
 		Vec::from([(self.particle_index * 2, velocity.x), (self.particle_index * 2 + 1, velocity.y)])
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>) {
 		let position = particles[self.particle_index].get_position();
 		DrawRenderer::line(
 			canvas,
@@ -223,13 +211,13 @@ impl Constrain for FixedConstraint {
 /// The line is defined by a point and a director vector (length does not matter).
 pub struct LineConstraint {
 	particle_index: usize,
-	point: Vec2,
-	director: Vec2,
+	point: Point2<f64>,
+	director: Vector2<f64>,
 	color: Color,
 }
 impl LineConstraint {
-	pub fn new(particle: usize, director: Vec2, color: Color) -> Self {
-		Self { particle_index: particle, point: Vec2::ZERO, director, color }
+	pub fn new(particle: usize, director: Vector2<f64>, color: Color) -> Self {
+		Self { particle_index: particle, point: Point2::origin(), director, color }
 	}
 }
 impl Constrain for LineConstraint {
@@ -237,27 +225,27 @@ impl Constrain for LineConstraint {
 		self.point = particles[self.particle_index].get_position();
 	}
 
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64 {
 		let position = particles[self.particle_index].get_position();
 		let delta = position - self.point;
-		delta.dot(self.director.perpendicular())
+		delta.dot(&(self.director.perpendicular()))
 	}
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64 {
 		let velocity = particles[self.particle_index].get_velocity();
-		velocity.dot(self.director.perpendicular())
+		velocity.dot(&(self.director.perpendicular()))
 	}
-	fn jacobian_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let jacobian = self.director.perpendicular();
 		Vec::from([(self.particle_index * 2, jacobian.x), (self.particle_index * 2 + 1, jacobian.y)])
 	}
-	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		Vec::new()
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, _particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, _particles: &Vec<Particle>) {
 		let start = self.point - self.director * 1000.0;
 		let end = self.point + self.director * 1000.0;
-		DrawRenderer::line(canvas, start.x as i16, start.y as i16, end.x as i16, end.y as i16, self.color).unwrap();
+		// camera.draw_line(canvas, self.color, ...);
 	}
 }
 
@@ -267,22 +255,30 @@ impl Constrain for LineConstraint {
 /// and a x0 value (the minimum x value of the parabola).
 pub struct ParabolaConstraint {
 	particle_index: usize,
-	point: Vec2,
-	director: Vec2,
-	x0: f32,
+	point: Point2<f64>,
+	director: Vector2<f64>,
+	x0: f64,
 	color: Color,
 }
 impl ParabolaConstraint {
-	pub fn new(particle: usize, director: Vec2, x0: f32, color: Color) -> Self {
-		Self { particle_index: particle, point: Vec2::ZERO, director, x0, color }
+	pub fn new(particle: usize, director: Vector2<f64>, x0: f64, color: Color) -> Self {
+		Self { particle_index: particle, point: Point2::origin(), director, x0, color }
 	}
-	pub fn parabola_function(&self) -> Box<dyn Fn(f32) -> Vec2> {
+	pub fn parabola_function(&self) -> Box<dyn Fn(f64) -> Point2<f64>> {
 		let point = self.point;
 		let director = self.director;
 		let x0 = self.x0;
-		Box::new(move |t: f32| -> Vec2 { point + t * Vec2::new(1.0, t - 2.0 * x0).rotation_scale_transform(director) })
+
+		let t = 0.0;
+		let transform = Matrix2::new(director.x, director.y, -director.y, director.x);
+		println!("{}", transform);
+		let rotation_scale_transform = Transform2::from_matrix_unchecked(transform.to_homogeneous());
+
+		Box::new(move |t: f64| -> Point2<f64> {
+			point + rotation_scale_transform * Vector2::new(1.0, t - 2.0 * x0) * t
+		})
 	}
-	pub fn nearest_point_on_parabola(&self, point: Vec2) -> Vec2 {
+	pub fn nearest_point_on_parabola(&self, point: Point2<f64>) -> Point2<f64> {
 		let t = nearest_point_on_curve(point, self.parabola_function());
 		(*self.parabola_function())(t)
 	}
@@ -292,42 +288,42 @@ impl Constrain for ParabolaConstraint {
 		self.point = particles[self.particle_index].get_position();
 	}
 
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64 {
 		let position = particles[self.particle_index].get_position();
 		let on_curve = self.nearest_point_on_parabola(position);
 		let delta = on_curve - position;
-		delta.length_squared() / 2.0
+		delta.norm_squared() / 2.0
 	}
 
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64 {
 		let velocity = particles[self.particle_index].get_velocity();
 		let position = particles[self.particle_index].get_position();
 		let on_curve = self.nearest_point_on_parabola(position);
 		let delta = on_curve - position;
-		velocity.dot(delta)
+		velocity.dot(&delta)
 	}
 
-	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_blocs(&self, particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let position = particles[self.particle_index].get_position();
 		let on_curve = self.nearest_point_on_parabola(position);
 		let delta = on_curve - position;
 		Vec::from([(self.particle_index * 2, delta.x), (self.particle_index * 2 + 1, delta.y)])
 	}
 
-	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		// let velocity = particles[self.particle_index].get_velocity();
 		// Vec::from([(self.particle_index * 2, velocity.x), (self.particle_index * 2 + 1, velocity.y)])
 		Vec::new()
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, _particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, _particles: &Vec<Particle>) {
 		let function = self.parabola_function();
 		let n = 30;
-		let mut point1 = (*function)(-n as f32);
+		let mut point1 = (*function)(-n as f64);
 		let mut point2 = point1;
 		((-n + 1)..=n).for_each(|i| {
 			point2 = point1;
-			point1 = (*function)(i as f32);
+			point1 = (*function)(i as f64);
 			DrawRenderer::line(canvas, point1.x as i16, point1.y as i16, point2.x as i16, point2.y as i16, self.color)
 				.unwrap();
 		});
@@ -343,11 +339,11 @@ impl Constrain for ParabolaConstraint {
 pub struct SlidingConstraint {
 	end1_index: usize,
 	end2_index: usize,
-	offset: f32,
-	director: Vec2,
+	offset: f64,
+	director: Vector2<f64>,
 }
 impl SlidingConstraint {
-	pub fn new(particle_index: usize, anchor_index: usize, director: Vec2) -> Self {
+	pub fn new(particle_index: usize, anchor_index: usize, director: Vector2<f64>) -> Self {
 		Self { end1_index: particle_index, end2_index: anchor_index, offset: 0.0, director }
 	}
 }
@@ -356,22 +352,22 @@ impl Constrain for SlidingConstraint {
 		let end1_position = particles[self.end1_index].get_position();
 		let end2_position = particles[self.end2_index].get_position();
 		let delta = end2_position - end1_position;
-		self.offset = delta.dot(self.director.perpendicular());
+		self.offset = delta.dot(&(self.director.perpendicular()));
 	}
 
-	fn constrain_function(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_function(&self, particles: &Vec<Particle>) -> f64 {
 		let end1_position = particles[self.end1_index].get_position();
 		let end2_position = particles[self.end2_index].get_position();
 		let delta = end2_position - end1_position;
-		delta.dot(self.director.perpendicular()) - self.offset
+		delta.dot(&(self.director.perpendicular())) - self.offset
 	}
-	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f32 {
+	fn constrain_derivative(&self, particles: &Vec<Particle>) -> f64 {
 		let end1_velocity = particles[self.end1_index].get_velocity();
 		let end2_velocity = particles[self.end2_index].get_velocity();
 		let delta_velocity = end2_velocity - end1_velocity;
-		delta_velocity.dot(self.director.perpendicular())
+		delta_velocity.dot(&(self.director.perpendicular()))
 	}
-	fn jacobian_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		let jacobian = self.director.perpendicular();
 		Vec::from([
 			(self.end1_index * 2, -jacobian.x),
@@ -380,14 +376,14 @@ impl Constrain for SlidingConstraint {
 			(self.end2_index * 2 + 1, jacobian.y),
 		])
 	}
-	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f32)> {
+	fn jacobian_derivative_blocs(&self, _particles: &Vec<Particle>) -> Vec<(usize, f64)> {
 		Vec::new()
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>) {
 		let end1_position = particles[self.end1_index].get_position();
 		let end2_position = particles[self.end2_index].get_position();
-		let middle_position = (end1_position + end2_position) * 0.5;
+		let middle_position = (end1_position + end2_position.coords) * 0.5; // TODO meilleur manière ?
 		let minus_end = middle_position - self.director * 1000.0;
 		let plus_end = middle_position + self.director * 1000.0;
 		DrawRenderer::line(

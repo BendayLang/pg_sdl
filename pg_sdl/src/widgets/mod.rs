@@ -26,7 +26,7 @@ pub enum Orientation {
 /// A widget is a UI object that can be interacted with to take inputs from the user.
 pub trait Widget: AsAny {
 	/// Update the widget based on the inputs
-	fn update(&mut self, input: &Input, delta: f32, text_drawer: &mut TextDrawer) -> bool;
+	fn update(&mut self, input: &Input, delta: f64, text_drawer: &mut TextDrawer) -> bool;
 	/// Draw the widget on the canvas
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer);
 }
@@ -50,7 +50,7 @@ impl Widgets {
 		self.0.get_mut(name).and_then(|w| w.as_mut().downcast_mut::<T>())
 	}
 
-	pub fn update(&mut self, input: &Input, delta: f32, text_drawer: &mut TextDrawer) -> bool {
+	pub fn update(&mut self, input: &Input, delta: f64, text_drawer: &mut TextDrawer) -> bool {
 		let mut redraw = false;
 		for widget in self.0.values_mut() {
 			redraw |= widget.update(input, delta, text_drawer);

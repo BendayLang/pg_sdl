@@ -1,23 +1,27 @@
 #![allow(dead_code)]
+
 use crate::particle::Particle;
+use nalgebra::{Affine2, Isometry2, Matrix3, Point2, Rotation2, Similarity2, Transform2, UnitVector2, Vector2};
+use pg_sdl::camera::Camera;
 use pg_sdl::color::{darker, Colors};
-use pg_sdl::vector2::Vec2;
+use pg_sdl::vector2::Vector2Plus;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
+use std::f64::consts::{PI, TAU};
 
 pub trait ForceGenerator {
 	fn apply_forces(&self, particles: &mut Vec<Particle>);
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>);
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>);
 }
 
 #[derive(Debug)]
 pub struct Gravity {
-	acceleration: Vec2,
+	acceleration: Vector2<f64>,
 }
 impl Gravity {
-	pub fn new(acceleration: Vec2) -> Self {
+	pub fn new(acceleration: Vector2<f64>) -> Self {
 		Self { acceleration }
 	}
 }
@@ -27,7 +31,7 @@ impl ForceGenerator for Gravity {
 			particle.apply_force(self.acceleration * particle.get_mass());
 		});
 	}
-	fn draw(&self, _canvas: &mut Canvas<Window>, _particles: &Vec<Particle>) {}
+	fn draw(&self, _canvas: &mut Canvas<Window>, _camera: &Camera, _particles: &Vec<Particle>) {}
 }
 
 /// A physics_engine is a force generator.
@@ -42,20 +46,23 @@ impl ForceGenerator for Gravity {
 pub struct Spring {
 	end1_index: usize,
 	end2_index: usize,
-	k: f32,
-	b: f32,
-	rest_length: f32,
-	diameter: f32,
+	k: f64,
+	b: f64,
+	rest_length: f64,
+	diameter: f64,
 	color: Color,
 }
 impl Spring {
 	pub fn new(
-		end1_index: usize, end2_index: usize, k: f32, b: f32, default_length: f32, diameter: f32, color: Color,
+		end1_index: usize, end2_index: usize, k: f64, b: f64, default_length: f64, diameter: f64, color: Color,
 	) -> Self {
 		Self { rest_length: default_length, end1_index, end2_index, k, b, diameter, color }
 	}
 	pub fn set_end2_index(&mut self, end2_index: usize) {
 		self.end2_index = end2_index;
+	}
+	pub fn get_end2_index(&mut self) -> usize {
+		self.end2_index // TODO <- find a better way to grab particles
 	}
 }
 impl ForceGenerator for Spring {
@@ -66,170 +73,147 @@ impl ForceGenerator for Spring {
 
 		let delta_position = particles[self.end2_index].get_position() - particles[self.end1_index].get_position();
 		let delta_velocity = particles[self.end2_index].get_velocity() - particles[self.end1_index].get_velocity();
-		let direction = delta_position.normalized();
+		let direction = delta_position.normalize();
 
-		let force = -self.k * (delta_position.length() - self.rest_length);
-		let damping = -self.b * delta_velocity.dot(direction);
+		let force = -self.k * (delta_position.norm() - self.rest_length);
+		let damping = -self.b * delta_velocity.dot(&direction);
 		let force = direction * (force + damping);
 
 		particles[self.end1_index].apply_force(-force);
 		particles[self.end2_index].apply_force(force);
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>) {
 		if self.end1_index == self.end2_index {
 			return;
 		}
-
 		let start_position = particles[self.end1_index].get_position();
 		let end_position = particles[self.end2_index].get_position();
 		let delta = end_position - start_position;
-		let x_dir = delta.with_length(delta.length() - self.diameter);
-		let y_dir = x_dir.perpendicular() * self.diameter;
-		let transform = |v: Vec2| {
-			start_position - y_dir / 2.0 + x_dir.with_length(self.diameter / 2.0) + v.linear_transform(x_dir, y_dir)
+
+		let n = 5; // Number of turns
+		let d = 0.1; // Small diameter in proportion to large diameter
+		let m = 1.4; // Width of the end parts in proportion to small diameter
+		let f = 0.5; // Length of the end parts in proportion to large diameter
+
+		let non_uniform_scaling = |x_scaling: f64, y_scaling: f64| {
+			Affine2::from_matrix_unchecked(Matrix3::new(x_scaling, 0.0, 0.0, 0.0, y_scaling, 0.0, 0.0, 0.0, 1.0))
 		};
 
-		let draw_thick_line = |start: Vec2, end: Vec2, width: u8, color: Color| {
-			DrawRenderer::thick_line(canvas, start.x as i16, start.y as i16, end.x as i16, end.y as i16, width, color)
-				.unwrap();
-			let p = end - start;
-			let q = p.perpendicular() * width as f32 / 2.0;
-			DrawRenderer::line(
-				canvas,
-				(start.x + q.x) as i16,
-				(start.y + q.y) as i16,
-				(end.x + q.x) as i16,
-				(end.y + q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-			DrawRenderer::line(
-				canvas,
-				(start.x - q.x) as i16,
-				(start.y - q.y) as i16,
-				(end.x - q.x) as i16,
-				(end.y - q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-		};
+		if delta.norm() / self.diameter <= 2.0 * f {
+			let transform = Isometry2::new(start_position.coords, delta.get_angle())
+				* non_uniform_scaling(self.diameter * f, self.diameter);
 
-		let draw_rect = |start: Vec2, end: Vec2, width: u8, color: Color| {
-			DrawRenderer::thick_line(canvas, start.x as i16, start.y as i16, end.x as i16, end.y as i16, width, color)
-				.unwrap();
-			let p = end - start;
-			let q = p.perpendicular() * width as f32 / 2.0;
-			DrawRenderer::line(
-				canvas,
-				(start.x + q.x) as i16,
-				(start.y + q.y) as i16,
-				(end.x + q.x) as i16,
-				(end.y + q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-			DrawRenderer::line(
-				canvas,
-				(start.x - q.x) as i16,
-				(start.y - q.y) as i16,
-				(end.x - q.x) as i16,
-				(end.y - q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-			DrawRenderer::line(
-				canvas,
-				(start.x - q.x) as i16,
-				(start.y - q.y) as i16,
-				(start.x + q.x) as i16,
-				(start.y + q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-			DrawRenderer::line(
-				canvas,
-				(end.x - q.x) as i16,
-				(end.y - q.y) as i16,
-				(end.x + q.x) as i16,
-				(end.y + q.y) as i16,
-				Colors::BLACK,
-			)
-			.unwrap();
-		};
-
-		let draw_circle = |center: Vec2, radius: i16, color: Color| {
-			DrawRenderer::filled_circle(canvas, center.x as i16, center.y as i16, radius, color).unwrap();
-			DrawRenderer::circle(canvas, center.x as i16, center.y as i16, radius, Colors::BLACK).unwrap();
-		};
-
-		let length = (particles[self.end2_index].get_position() - particles[self.end1_index].get_position()).length();
-		if length > self.diameter {
-			draw_circle(start_position + y_dir.with_length(0.0), (self.diameter / 4.0) as i16, darker(self.color, 0.8));
-			draw_thick_line(
-				start_position,
-				transform(Vec2::new(0.0, 0.5)),
-				(self.diameter / 2.0) as u8,
-				darker(self.color, 0.8),
+			let o = delta.norm() / self.diameter - 2.0 * f + 1.0;
+			let mut poly = Vec::from([
+				Point2::new(o - d * m / f, -d * m),
+				Point2::new(o - d * m / f, -0.5),
+				Point2::new(o + d * m / f, -0.5),
+				Point2::new(o + d * m / f, -d * m),
+			]);
+			poly.extend(
+				(0..=5)
+					.map(|i| {
+						let v = Vector2::new_unitary((i as f64 / 5.0 - 0.5) * PI);
+						Point2::new(v.x / f, v.y) * d * m + Vector2::new(o * 2.0, 0.0)
+					})
+					.collect::<Vec<Point2<f64>>>(),
+			);
+			poly.extend(Vec::from([
+				Point2::new(o + d * m / f, d * m),
+				Point2::new(o + d * m / f, 0.5),
+				Point2::new(o - d * m / f, 0.5),
+				Point2::new(o - d * m / f, d * m),
+			]));
+			poly.extend(
+				(0..=5)
+					.map(|i| {
+						let v = Vector2::new_unitary((i as f64 / 5.0 + 0.5) * PI);
+						Point2::new(v.x / f, v.y) * d * m
+					})
+					.collect::<Vec<Point2<f64>>>(),
 			);
 
-			draw_circle(end_position, (self.diameter / 4.0) as i16, darker(self.color, 0.8));
-			draw_thick_line(
-				transform(Vec2::new(1.0, 0.5)),
-				end_position,
-				(self.diameter / 2.0) as u8,
-				darker(self.color, 0.8),
-			);
-
-			let n = 4;
-			let dp = 1.0 / n as f32;
-
-			(0..n).for_each(|i| {
-				let p = i as f32 / n as f32;
-				draw_thick_line(
-					transform(Vec2::new(p, 0.0)),
-					transform(Vec2::new(p + dp / 2.0, 1.0)),
-					(self.diameter / 4.0) as u8,
-					darker(self.color, 0.85),
-				);
-			});
-			(0..n).for_each(|i| {
-				let p = i as f32 / n as f32;
-				let start = transform(Vec2::new(p + dp / 2.0, 1.0));
-				let end = transform(Vec2::new(p + dp, 0.0));
-				draw_circle(start, (self.diameter / 3.5) as u8 as i16 / 2 + 1, self.color);
-				draw_circle(end, (self.diameter / 3.5) as u8 as i16 / 2 + 1, self.color);
-				draw_thick_line(start, end, (self.diameter / 3.5) as u8, self.color);
-			});
-
-			draw_rect(
-				transform(Vec2::new(0.0, -0.15)),
-				transform(Vec2::new(0.0, 1.15)),
-				(self.diameter / 3.0) as u8,
-				self.color,
-			);
-			draw_rect(
-				transform(Vec2::new(1.0, -0.15)),
-				transform(Vec2::new(1.0, 1.15)),
-				(self.diameter / 3.0) as u8,
-				self.color,
-			);
+			let poly = poly.iter().map(|point| transform * point).collect();
+			camera.fill_polygon(canvas, self.color, &poly);
+			camera.draw_polygon(canvas, Colors::BLACK, &poly);
 		} else {
-			draw_circle(start_position, (self.diameter / 4.0) as i16, darker(self.color, 0.8));
-			draw_circle(end_position, (self.diameter / 4.0) as i16, darker(self.color, 0.8));
-			draw_thick_line(start_position, end_position, (self.diameter / 2.0) as u8, darker(self.color, 0.8));
+			let spacing = 1.0 / (2 * n + 1) as f64;
+			let dl = (delta.norm() / self.diameter - 2.0) * spacing;
+			let ld = d * self.diameter * (dl * dl + 1.0).sqrt();
+			let darker_color = darker(self.color, 0.8);
 
-			let delta = end_position - start_position;
-			draw_rect(
-				start_position + delta / 2.0 + y_dir.normalized() * self.diameter * 1.3 / 2.0,
-				start_position + delta / 2.0 - y_dir.normalized() * self.diameter * 1.3 / 2.0,
-				(self.diameter / 3.0) as u8,
-				self.color,
-			);
+			let start_transform = Isometry2::new(start_position.coords, delta.get_angle())
+				* non_uniform_scaling(self.diameter * f, self.diameter);
+			let end_transform = Isometry2::new(end_position.coords, delta.get_angle())
+				* non_uniform_scaling(-self.diameter * f, self.diameter);
+
+			let isometry = Isometry2::new(start_position.coords + start_transform * Vector2::x(), delta.get_angle());
+			let scaling = non_uniform_scaling(delta.norm() - self.diameter * f * 2.0, self.diameter * 0.5);
+
+			// Draws the back spires
+			(0..=n).for_each(|i| {
+				let m = (2 * i) as f64 * spacing;
+				let p1 = scaling * Point2::new(m, 1.0);
+				let p2 = scaling * Point2::new(m + spacing, -1.0);
+
+				let poly = Vec::from([
+					p1 + Vector2::new(-ld, 0.0),
+					p1 + Vector2::new(ld, 0.0),
+					p2 + Vector2::new(ld, 0.0),
+					p2 + Vector2::new(-ld, 0.0),
+				])
+				.iter()
+				.map(|point| isometry * point)
+				.collect();
+
+				camera.fill_polygon(canvas, darker_color, &poly);
+				camera.draw_polygon(canvas, Colors::BLACK, &poly);
+			});
+			// Draws the front spires
+			(0..n).for_each(|i| {
+				let m = ((2 * i + 1) as f64) * spacing;
+				let p1 = scaling * Point2::new(m, -1.0);
+				let p2 = scaling * Point2::new(m + spacing, 1.0);
+
+				let poly = Vec::from([
+					p1 + Vector2::new(-ld, 0.0),
+					p1 + Vector2::new(ld, 0.0),
+					p2 + Vector2::new(ld, 0.0),
+					p2 + Vector2::new(-ld, 0.0),
+				])
+				.iter()
+				.map(|point| isometry * point)
+				.collect();
+
+				camera.fill_polygon(canvas, self.color, &poly);
+				camera.draw_polygon(canvas, Colors::BLACK, &poly);
+			});
+
+			// Draws the ends
+			let mut poly = Vec::from([
+				Point2::new(1.0 - d * m / f, -d * m),
+				Point2::new(1.0 - d * m / f, -0.5),
+				Point2::new(1.0 + d * m / f, -0.5),
+				Point2::new(1.0 + d * m / f, 0.5),
+				Point2::new(1.0 - d * m / f, 0.5),
+				Point2::new(1.0 - d * m / f, d * m),
+			]);
+			let poly_r: Vec<Point2<f64>> = (0..=5)
+				.map(|i| {
+					let v = Vector2::new_unitary((i as f64 / 5.0 + 0.5) * PI);
+					Point2::new(v.x / f, v.y) * d * m
+				})
+				.collect();
+			poly.extend(poly_r);
+
+			let poly_start = poly.iter().map(|point| start_transform * point).collect();
+			camera.fill_polygon(canvas, self.color, &poly_start);
+			camera.draw_polygon(canvas, Colors::BLACK, &poly_start);
+			let poly_end = poly.iter().map(|point| end_transform * point).collect();
+			camera.fill_polygon(canvas, self.color, &poly_end);
+			camera.draw_polygon(canvas, Colors::BLACK, &poly_end);
 		}
-
-		draw_circle(start_position, (self.diameter / 6.0) as i16, self.color);
-		draw_circle(end_position, (self.diameter / 6.0) as i16, self.color);
 	}
 }
 
@@ -242,11 +226,11 @@ impl ForceGenerator for Spring {
 pub struct Motor {
 	start: usize,
 	end: usize,
-	speed: f32,
+	speed: f64,
 	color: Color,
 }
 impl Motor {
-	pub fn new(start: usize, end: usize, speed: f32, color: Color) -> Self {
+	pub fn new(start: usize, end: usize, speed: f64, color: Color) -> Self {
 		Self { start, end, speed, color }
 	}
 }
@@ -260,12 +244,12 @@ impl ForceGenerator for Motor {
 		particles[self.end].apply_force(delta_position.perpendicular() * self.speed);
 	}
 
-	fn draw(&self, canvas: &mut Canvas<Window>, particles: &Vec<Particle>) {
+	fn draw(&self, canvas: &mut Canvas<Window>, camera: &Camera, particles: &Vec<Particle>) {
 		let start_position = particles[self.start].get_position();
 		let end_position = particles[self.end].get_position();
 		let delta_position = end_position - start_position;
-		let radius = delta_position.length();
-		let angle = delta_position.angle_deg();
+		let radius = delta_position.norm();
+		let angle = delta_position.get_angle().to_degrees();
 
 		let w = 5;
 
@@ -300,10 +284,11 @@ impl ForceGenerator for Motor {
 		)
 		.unwrap();
 
+		/*
 		(0..4).into_iter().for_each(|i| {
-			let angle = angle + i as f32 / 4.0 * 360.0;
-			let t1 = start_position + Vec2::from_polar_deg(radius + w as f32 - 1.0, angle);
-			let t2 = start_position + Vec2::from_polar_deg(radius + w as f32 - 2.0, angle + 45.0);
+			let angle = angle + i as f64 / 4.0 * 360.0;
+			let t1 = start_position + Vector2::from_polar_deg(radius + w as f64 - 1.0, angle);
+			let t2 = start_position + Vector2::from_polar_deg(radius + w as f64 - 2.0, angle + 45.0);
 			DrawRenderer::thick_line(
 				canvas,
 				start_position.x as i16,
@@ -345,5 +330,6 @@ impl ForceGenerator for Motor {
 			)
 			.unwrap();
 		});
+		 */
 	}
 }

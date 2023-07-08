@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 pub trait App {
-	fn update(&mut self, delta: f32, input: &Input, widgets: &mut Widgets) -> bool;
+	fn update(&mut self, delta: f64, input: &Input, widgets: &mut Widgets) -> bool;
 	fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer);
 }
 
@@ -51,7 +51,7 @@ impl PgSdl {
 		}
 	}
 
-	fn draw_fps(&mut self, delta: f32) {
+	fn draw_fps(&mut self, delta: f64) {
 		self.canvas.set_draw_color(Color::WHITE);
 		self.canvas.fill_rect(rect!(10.0, 2.0, 120.0, 32.0)).unwrap();
 		self.text_drawer.draw(
@@ -67,12 +67,13 @@ impl PgSdl {
 	where
 		U: App,
 	{
-		fill_background(&mut self.canvas, self.background_color);
+		self.canvas.set_draw_color(self.background_color);
+		self.canvas.clear();
 		user_app.draw(&mut self.canvas, &mut self.text_drawer);
 		self.widgets.draw(&mut self.canvas, &self.text_drawer);
 	}
 
-	fn update<U>(&mut self, user_app: &mut U, delta: f32) -> bool
+	fn update<U>(&mut self, user_app: &mut U, delta: f64) -> bool
 	where
 		U: App,
 	{
@@ -86,7 +87,7 @@ impl PgSdl {
 		U: App,
 	{
 		let mut frame_instant: Instant;
-		let mut frame_time: f32 = 0.02;
+		let mut frame_time: f64 = 0.02;
 
 		self.input.get_events(); // permet au draw de savoir ou placer les widgets la première fois
 		self.draw(user_app);
@@ -122,7 +123,7 @@ impl PgSdl {
 				}
 			}
 
-			frame_time = frame_instant.elapsed().as_secs_f32();
+			frame_time = frame_instant.elapsed().as_secs_f64();
 		}
 	}
 

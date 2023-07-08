@@ -6,6 +6,7 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::ttf::FontStyle;
 
+use crate::canvas::{draw_rounded_rect, fill_rounded_rect};
 use sdl2::video::Window;
 
 pub enum Orientation {
@@ -39,7 +40,7 @@ pub struct Slider {
 	pushed_thumb_color: Color,
 	rect: Rect,
 	orientation: Orientation,
-	corner_radius: Option<u16>,
+	corner_radius: u16,
 	hovered: bool,
 	pub state: KeyState,
 	/// Internal value of the slider (0.0 - 1.0)
@@ -48,7 +49,7 @@ pub struct Slider {
 }
 
 impl Slider {
-	pub fn new(color: Color, rect: Rect, corner_radius: Option<u16>, slider_type: SliderType) -> Self {
+	pub fn new(color: Color, rect: Rect, corner_radius: u16, slider_type: SliderType) -> Self {
 		let orientation = {
 			if rect.width() > rect.height() {
 				Orientation::Horizontal
@@ -118,7 +119,7 @@ impl Slider {
 }
 
 impl Widget for Slider {
-	fn update(&mut self, input: &Input, _delta: f32, _text_drawer: &mut TextDrawer) -> bool {
+	fn update(&mut self, input: &Input, _delta: f64, _text_drawer: &mut TextDrawer) -> bool {
 		let mut changed = false;
 		self.state.update();
 
@@ -198,23 +199,17 @@ impl Widget for Slider {
 			),
 		};
 
-		fill_rect(
-			canvas,
-			back_rect,
-			if self.hovered | self.state.is_pressed() | self.state.is_down() {
-				self.hovered_back_color
-			} else {
-				self.back_color
-			},
-			self.corner_radius.map(|r| (r as f32 * b) as u16),
-		);
-
-		fill_rect(
-			canvas,
-			rect,
-			if self.hovered | self.state.is_pressed() | self.state.is_down() { self.hovered_color } else { self.color },
-			self.corner_radius.map(|r| (r as f32 * b) as u16),
-		);
+		let color = if self.hovered | self.state.is_pressed() | self.state.is_down() {
+			self.hovered_back_color
+		} else {
+			self.back_color
+		};
+		fill_rounded_rect(canvas, back_rect, color, self.corner_radius);
+		draw_rounded_rect(canvas, back_rect, Colors::BLACK, self.corner_radius);
+		let color =
+			if self.hovered | self.state.is_pressed() | self.state.is_down() { self.hovered_color } else { self.color };
+		fill_rounded_rect(canvas, rect, color, self.corner_radius);
+		draw_rounded_rect(canvas, rect, Colors::BLACK, self.corner_radius);
 
 		// Pad
 		let rect = match self.orientation {
@@ -231,18 +226,16 @@ impl Widget for Slider {
 				self.thickness()
 			),
 		};
-		fill_rect(
-			canvas,
-			rect,
-			if self.state.is_pressed() | self.state.is_down() {
-				self.pushed_thumb_color
-			} else if self.hovered {
-				self.hovered_thumb_color
-			} else {
-				self.thumb_color
-			},
-			self.corner_radius,
-		);
+
+		let color = if self.state.is_pressed() | self.state.is_down() {
+			self.pushed_thumb_color
+		} else if self.hovered {
+			self.hovered_thumb_color
+		} else {
+			self.thumb_color
+		};
+		fill_rounded_rect(canvas, rect, color, self.corner_radius);
+		draw_rounded_rect(canvas, rect, Colors::BLACK, self.corner_radius);
 
 		match &self.slider_type {
 			SliderType::Discrete { snap, display, .. } => {

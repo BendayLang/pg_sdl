@@ -6,6 +6,7 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::ttf::FontStyle;
 
+use crate::canvas::{draw_rounded_rect, fill_rounded_rect};
 use sdl2::video::Window;
 
 /// A switch is a widget that can be toggled __on__ or __off__
@@ -18,14 +19,14 @@ pub struct Switch {
 	hovered_thumb_color: Color,
 	rect: Rect,
 	orientation: Orientation,
-	corner_radius: Option<u16>,
+	corner_radius: u16,
 	hovered: bool,
 	pub state: KeyState,
 	switched: bool,
 }
 
 impl Switch {
-	pub fn new(on_color: Color, off_color: Color, rect: Rect, corner_radius: Option<u16>) -> Self {
+	pub fn new(on_color: Color, off_color: Color, rect: Rect, corner_radius: u16) -> Self {
 		let orientation = {
 			if rect.width() > rect.height() {
 				Orientation::Horizontal
@@ -54,6 +55,10 @@ impl Switch {
 		self.switched = switched;
 	}
 
+	pub fn is_switched(&self) -> bool {
+		self.switched
+	}
+
 	fn thumb_position(&self) -> u32 {
 		self.switched as u32 * self.length()
 	}
@@ -67,7 +72,7 @@ impl Switch {
 }
 
 impl Widget for Switch {
-	fn update(&mut self, input: &Input, _delta: f32, _text_drawer: &mut TextDrawer) -> bool {
+	fn update(&mut self, input: &Input, _delta: f64, _text_drawer: &mut TextDrawer) -> bool {
 		let mut changed = false;
 		self.state.update();
 
@@ -111,7 +116,8 @@ impl Widget for Switch {
 				}
 			}
 		};
-		fill_rect(canvas, self.rect, color, self.corner_radius);
+		fill_rounded_rect(canvas, self.rect, color, self.corner_radius);
+		draw_rounded_rect(canvas, self.rect, Colors::BLACK, self.corner_radius);
 
 		let thickness = match self.orientation {
 			Orientation::Horizontal => self.rect.height(),
@@ -137,11 +143,10 @@ impl Widget for Switch {
 				dot_width
 			),
 		};
-		fill_rect(
-			canvas,
-			thumb_rect,
-			if self.hovered { self.hovered_thumb_color } else { self.thumb_color },
-			self.corner_radius.map(|r| (r as f32 * b) as u16),
-		);
+
+		let radius = (self.corner_radius as f32 * b) as u16;
+		let color = if self.hovered { self.hovered_thumb_color } else { self.thumb_color };
+		fill_rounded_rect(canvas, thumb_rect, color, radius);
+		draw_rounded_rect(canvas, thumb_rect, Colors::BLACK, radius);
 	}
 }
