@@ -16,8 +16,6 @@ impl Print {
 }
 
 impl Bloc for Print {
-	fn new()
-	
 	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
 		self.skeleton.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) * Skeleton::MARGIN
 	}
