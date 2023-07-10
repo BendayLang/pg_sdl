@@ -1,7 +1,8 @@
 // #![allow(dead_code, unused_variables)]
 mod blocs;
-use crate::blocs::{BlocContainer, BlocElement, Skeleton};
+
 use blocs::{print::Print, Bloc};
+use blocs::{BlocContainer, BlocElement, Skeleton};
 use nalgebra::{Point2, Vector2};
 use pg_sdl::app::{App, PgSdl};
 use pg_sdl::camera::Camera;
@@ -9,7 +10,7 @@ use pg_sdl::color::{hsv_color, Colors};
 use pg_sdl::input::Input;
 use pg_sdl::rect;
 use pg_sdl::text::{TextDrawer, TextStyle};
-use pg_sdl::widgets::{Button, Widgets};
+use pg_sdl::widgets::{Button, TextInput, Widgets};
 use sdl2::render::Canvas;
 use sdl2::ttf::FontStyle;
 use sdl2::video::Window;
@@ -78,7 +79,7 @@ impl App for MyApp {
 								new_blocs_order.extend(childs_order_ids);
 								self.blocs_order = new_blocs_order;
 
-								// Select a bloc
+								// Rearrange parents / childs
 								if let Some(Container { bloc_id: parent_id, bloc_container }) =
 									self.blocs.get(bloc_id).unwrap().get_skeleton().get_parent().clone()
 								{
@@ -93,10 +94,19 @@ impl App for MyApp {
 										BlocContainer::Sequence { .. } => (),
 									}
 									self.blocs.get_mut(bloc_id).unwrap().get_skeleton_mut().set_parent(None);
+									let root_id = get_root(&parent_id, &self.blocs);
+									update_layout_and_positions(&root_id, &mut self.blocs);
 								}
-
-								let delta = self.blocs.get(bloc_id).unwrap().get_skeleton().get_position()
+								childs.iter().for_each(|child_id| {
+									self.blocs
+										.get_mut(child_id)
+										.unwrap()
+										.get_skeleton_mut()
+										.translate(-Skeleton::SHADOW);
+								});
+								let delta = self.blocs.get(bloc_id).unwrap().get_skeleton().get_position().clone()
 									- self.camera.transform.inverse() * input.mouse.position.cast();
+
 								self.app_state =
 									AppState::BlocMoving { moving_bloc_id: *bloc_id, delta, hovered_container: None };
 							}
@@ -136,7 +146,6 @@ impl App for MyApp {
 					}
 				}
 			}
-
 			AppState::BlocMoving { moving_bloc_id, delta, hovered_container } => {
 				// Release the bloc
 				if input.mouse.left_button.is_released() {
@@ -154,18 +163,19 @@ impl App for MyApp {
 									.get_skeleton_mut()
 									.set_parent(hovered_container.clone());
 								// Update layout and childs positions
-								let childs =
-									self.blocs.get(bloc_id).unwrap().get_skeleton().get_recursive_childs(&self.blocs);
-								childs.iter().for_each(|child_id| update_layout(*child_id, &mut self.blocs));
-								childs
-									.iter()
-									.rev()
-									.for_each(|child_id| update_childs_positions(*child_id, &mut self.blocs));
+								let root_id = get_root(bloc_id, &self.blocs);
+								update_layout_and_positions(&root_id, &mut self.blocs);
 							}
 							BlocContainer::Sequence { sequence_id, place } => {
 								// TODO release bloc in sequence
 							}
 						}
+					} else {
+						let childs =
+							self.blocs.get(&moving_bloc_id).unwrap().get_skeleton().get_recursive_childs(&self.blocs);
+						childs.iter().for_each(|child_id| {
+							self.blocs.get_mut(child_id).unwrap().get_skeleton_mut().translate(Skeleton::SHADOW);
+						});
 					}
 
 					let element = Element { bloc_id: *moving_bloc_id, bloc_element: BlocElement::Body };
@@ -179,12 +189,14 @@ impl App for MyApp {
 						.unwrap()
 						.get_skeleton_mut()
 						.set_position(mouse_position + delta);
+					update_layout_and_positions(&moving_bloc_id, &mut self.blocs);
 
 					// Update the (moving bloc) hovered container
 					let moving_bloc = self.blocs.get(&moving_bloc_id).unwrap().get_skeleton();
+					let moving_bloc_childs = moving_bloc.get_recursive_childs(&self.blocs);
 					let (mut new_hovered_container, mut ratio) = (None, 0.0);
 					self.blocs_order.iter().for_each(|bloc_id| {
-						if bloc_id != moving_bloc_id {
+						if !moving_bloc_childs.contains(bloc_id) {
 							if let Some((new_bloc_container, new_ratio)) = self
 								.blocs
 								.get(&bloc_id)
@@ -299,6 +311,8 @@ fn main() {
 			"New bloc".to_string(),
 		)),
 	);
+	app.add_widget("test", Box::new(TextInput::new(rect!(400, 100, 100, 30), None, Some("bob".to_string()))));
+	app.change_mouse_cursor();
 
 	app.run(my_app);
 }
@@ -313,6 +327,23 @@ fn update_childs_positions(bloc_id: u32, blocs: &mut HashMap<u32, Box<dyn Bloc>>
 	let mut bloc = blocs.remove(&bloc_id).unwrap();
 	bloc.get_skeleton_mut().update_child_position(blocs);
 	blocs.insert(bloc_id, bloc);
+}
+
+fn get_root(bloc_id: &u32, blocs: &HashMap<u32, Box<dyn Bloc>>) -> u32 {
+	let mut bloc_id = bloc_id;
+	loop {
+		if let Some(Container { bloc_id: parent_id, .. }) = blocs.get(bloc_id).unwrap().get_skeleton().get_parent() {
+			bloc_id = parent_id;
+		} else {
+			return *bloc_id;
+		}
+	}
+}
+
+fn update_layout_and_positions(bloc_id: &u32, blocs: &mut HashMap<u32, Box<dyn Bloc>>) {
+	let childs = blocs.get(bloc_id).unwrap().get_skeleton().get_recursive_childs(&blocs);
+	childs.iter().for_each(|child_id| update_layout(*child_id, blocs));
+	childs.iter().rev().for_each(|child_id| update_childs_positions(*child_id, blocs));
 }
 
 /*

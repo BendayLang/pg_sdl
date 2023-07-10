@@ -1,5 +1,7 @@
 use crate::prelude::*;
 use crate::widgets::Widgets;
+use ndarray::AssignElem;
+use sdl2::mouse::{Cursor, MouseUtil, SystemCursor};
 use sdl2::ttf::FontStyle;
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use std::collections::HashMap;
@@ -11,6 +13,7 @@ pub trait App {
 }
 
 pub struct PgSdl {
+	mouse: MouseUtil,
 	input: Input,
 	canvas: Canvas<Window>,
 	text_drawer: TextDrawer,
@@ -41,6 +44,7 @@ impl PgSdl {
 		let canvas = window.into_canvas().build().expect("Canvas could not be created");
 
 		PgSdl {
+			mouse: sdl_context.mouse(),
 			text_drawer: TextDrawer::new(canvas.texture_creator()),
 			input: Input::new(sdl_context, video_subsystem.clipboard()),
 			widgets: Widgets::new(),
@@ -136,5 +140,11 @@ impl PgSdl {
 		for (name, widget) in widgets {
 			self.widgets.add(name, widget);
 		}
+	}
+
+	pub fn change_mouse_cursor(&mut self) {
+		let cursor = Cursor::from_system(SystemCursor::WaitArrow).expect("mouse cursor loading error");
+		cursor.set();
+		// self.mouse
 	}
 }

@@ -71,7 +71,7 @@ impl Skeleton {
 	pub const RADIUS: f64 = 8.0;
 	const MARGIN: f64 = 12.0;
 	const INNER_MARGIN: f64 = 6.0;
-	const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
+	pub const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
 	const HOVER_ALPHA: u8 = 20;
 
 	pub fn new(
@@ -117,6 +117,10 @@ impl Skeleton {
 
 	pub fn get_position(&self) -> &Point2<f64> {
 		&self.position
+	}
+
+	pub fn translate(&mut self, delta: Vector2<f64>) {
+		self.position += delta;
 	}
 
 	pub fn get_size(&self) -> &Vector2<f64> {
@@ -308,27 +312,24 @@ impl Skeleton {
 		selected: Option<&BlocElement>, hovered: Option<&BlocElement>,
 	) {
 		// SHADOW
-		let origin = if moving {
+		if moving {
 			let shadow_color = Color::from((0, 0, 0, 50));
 			canvas.set_blend_mode(BlendMode::Mod);
-			camera.fill_rounded_rect(canvas, shadow_color, self.position, self.size, Self::RADIUS);
+			camera.fill_rounded_rect(canvas, shadow_color, self.position + Self::SHADOW, self.size, Self::RADIUS);
 			canvas.set_blend_mode(BlendMode::None);
-			self.position - Self::SHADOW
-		} else {
-			self.position
 		};
 		// BODY
-		camera.fill_rounded_rect(canvas, self.color, origin, self.size, Self::RADIUS);
+		camera.fill_rounded_rect(canvas, self.color, self.position, self.size, Self::RADIUS);
 		if selected.is_some() || hovered.is_some() {
 			// draw top box
 		}
 		// SLOTS
 		self.slots.iter().for_each(|slot| {
-			slot.draw(canvas, text_drawer, camera, origin);
+			slot.draw(canvas, text_drawer, camera, self.position);
 		});
 		// SEQUENCES
 		self.sequences.iter().for_each(|sequence| {
-			sequence.draw(canvas, text_drawer, camera, origin);
+			sequence.draw(canvas, text_drawer, camera, self.position);
 		});
 		// HOVERED
 		if let Some(element) = hovered {
@@ -338,7 +339,7 @@ impl Skeleton {
 					camera.fill_rounded_rect(
 						canvas,
 						Color::from((0, 0, 0, Self::HOVER_ALPHA)),
-						origin,
+						self.position,
 						self.size,
 						Self::RADIUS,
 					);
@@ -346,7 +347,7 @@ impl Skeleton {
 				}
 				BlocElement::Slot(slot_id) => {
 					let slot = self.slots.get(slot_id.clone()).unwrap();
-					slot.draw_hovered(canvas, camera, origin);
+					slot.draw_hovered(canvas, camera, self.position);
 				}
 				_ => (),
 			}
@@ -355,17 +356,17 @@ impl Skeleton {
 		if let Some(element) = selected {
 			match element {
 				BlocElement::Body => {
-					camera.draw_rounded_rect(canvas, Colors::BLACK, origin, self.size, Self::RADIUS);
+					camera.draw_rounded_rect(canvas, Colors::BLACK, self.position, self.size, Self::RADIUS);
 				}
 				BlocElement::Slot(slot_id) => {
 					let slot = self.slots.get(slot_id.clone()).unwrap();
-					slot.draw_selected(canvas, camera, origin);
+					slot.draw_selected(canvas, camera, self.position);
 				}
 				_ => (),
 			}
 		}
-		let text = format!("{}  parent: {:?}", self.id, self.parent);
-		camera.draw_text(canvas, text_drawer, origin, 15.0, text, Align::TopLeft);
+		let text = format!("{}", self.id);
+		camera.draw_text(canvas, text_drawer, self.position, 15.0, text, Align::TopLeft);
 	}
 }
 
