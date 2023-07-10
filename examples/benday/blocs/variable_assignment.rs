@@ -1,14 +1,15 @@
+use crate::blocs::containers::Sequence;
 use crate::blocs::widgets::TextBox;
+use crate::blocs::Slot;
 use crate::blocs::{Bloc, Skeleton};
-use pg_sdl::color::{Colors, hsv_color, paler};
-use std::collections::HashMap;
 use nalgebra::{Point2, Vector2};
+use pg_sdl::camera::Camera;
+use pg_sdl::color::{hsv_color, paler, Colors};
+use pg_sdl::prelude::TextDrawer;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use pg_sdl::camera::Camera;
-use pg_sdl::prelude::TextDrawer;
-use crate::blocs::Slot;
+use std::collections::HashMap;
 // Login admin labo
 // name:     .\adminlabo
 // password: Robotique2023
@@ -21,15 +22,16 @@ pub struct VariableAssignment {
 	// type: str | None
 }
 
+/*
 impl VariableAssignment {
 	const COLOR: Color = hsv_color(30, 0.6, 1.0);
-	
+
 	pub fn new(position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self {
 		let mut bloc = Self {
 			skeleton: Skeleton::new(Self::COLOR, position, vec![Slot::new(Self::COLOR, "value")], Vec::new()),
 			name: TextBox::new(Slot::DEFAULT_SIZE, Self::COLOR, "name".to_string()),
 		};
-		bloc.skeleton.size = bloc.get_size(blocs);
+		// bloc.skeleton.size = bloc.get_size(blocs);
 		bloc
 	}
 	/*
@@ -39,24 +41,27 @@ impl VariableAssignment {
 	}
 	 */
 }
+*/
 
+/*
 impl Bloc for VariableAssignment {
 	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
-		let width = self.skeleton.slots.get(0).unwrap().get_size(blocs).x + self.name.get_size().x + Skeleton::INNER_MARGIN;
-	   let height = sum([slot.size.y for slot in self.slots]) + max(len(self.slots) - 1, 0) * Skeleton::INNER_MARGIN;
-	   return Vec2(width, height) + Vec2(2 * MARGIN)
+		let width = self.name.get_size().x +
+			self.skeleton.slots.get(0).unwrap().get_size(blocs).x + 2.0 * Skeleton::INNER_MARGIN;
+	   let height = self.skeleton.slots.get(0).unwrap().get_size(blocs).y;
+	   return Vector2::new(width, height) + Vector2::new(2.0, 2.0) * Skeleton::MARGIN;
 	}
-	
+
 	fn slot_position(&self, slot_id: u16) -> Vector2<f64> {
-		position_x = self.name_box.size.x + self.text_width + TEXT_EQUAL_SIZE.x + 3 * INNER_MARGIN
-	   position_y = sum([slot.size.y for slot in self.slots[:slot_id]]) + slot_id * INNER_MARGIN
+		let position_x = self.name.get_size().x + TEXT_EQUAL_SIZE.x + 2.0 * Skeleton::INNER_MARGIN;
+	   let position_y = sum([slot.size.y for slot in self.slots[:slot_id]]) + slot_id * INNER_MARGIN
 	   return Vec2(position_x, position_y) + Vec2(MARGIN)
 	}
-	
+
 	fn sequence_position(&self, sequence_id: u16) -> Vector2<f64> {
 		todo!()
 	}
-	
+
 	fn button_size(&self, button_id: u16) -> Vector2<f64> {
 		match self.buttons[button_id]:
 		   case "name_box":
@@ -64,7 +69,7 @@ impl Bloc for VariableAssignment {
 		   case "choose_type":
 			   return Vec2(self.text_width, BT_TYPE_SIZE.y)
 	}
-	
+
 	fn button_position(&self, button_id: u16) -> Vector2<f64> {
 		match self.buttons[button_id]:
 		   case "name_box":
@@ -73,15 +78,16 @@ impl Bloc for VariableAssignment {
 			   return Vec2(MARGIN + self.name_box.size.x + INNER_MARGIN,
 						   (self.size.y - BT_TYPE_SIZE.y) / 2)
 	}
-	
+
 	fn draw_button(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera) {
 		todo!()
 	}
-	
+
 	fn button_function(&mut self, button_id: u16) -> bool {
 		todo!()
 	}
 }
+ */
 
 /*
    def post_draw(self, surface: Surface, camera: Camera, origin: Vec2):

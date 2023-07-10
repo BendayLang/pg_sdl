@@ -25,7 +25,7 @@ impl TextBox {
 	pub fn get_text(&self) -> String {
 		self.text.clone()
 	}
-	pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, position: Vector2<f64>) {
-		camera.fill_rounded_rect(canvas, self.color, Point2::from(position), self.size, Slot::RADIUS);
+	pub fn draw(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, position: Point2<f64>) {
+		camera.fill_rounded_rect(canvas, self.color, position, self.size, Slot::RADIUS);
 	}
 }

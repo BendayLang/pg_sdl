@@ -56,17 +56,17 @@ impl Camera {
 	}
 
 	/// Translates and scales the camera from the inputs
-	pub fn update(&mut self, input: &Input) -> bool {
+	pub fn update(&mut self, input: &Input, lock_translation: bool) -> bool {
 		let mut changed = false;
 
-		if input.mouse.left_button.is_down() {
+		if input.mouse.left_button.is_down() && !lock_translation {
 			let mouse_delta = input.mouse.delta.cast();
 			changed |= self.translate(mouse_delta);
 		}
 
 		let scaling = self.scaling_factor.powf(input.mouse.wheel as f64);
-		let mouse_position = input.mouse.position.coords.cast();
-		changed |= self.change_scale(scaling, mouse_position);
+		let center = input.mouse.position.coords.cast();
+		changed |= self.change_scale(scaling, center);
 
 		changed
 	}

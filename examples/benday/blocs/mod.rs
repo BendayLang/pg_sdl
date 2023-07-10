@@ -1,94 +1,224 @@
-mod containers;
-mod print;
+pub mod containers;
+pub mod print;
 mod variable_assignment;
 mod widgets;
 
-use crate::blocs::containers::{HoveredOn, Sequence, Slot};
-use crate::blocs::widgets::TextBox;
-use as_any::AsAny;
+use crate::blocs::containers::{Sequence, Slot};
+use crate::Container;
 use nalgebra::{Point2, Vector2};
 use pg_sdl::camera::Camera;
-use pg_sdl::color::{paler, Colors};
-use pg_sdl::prelude::TextDrawer;
+use pg_sdl::color::Colors;
+use pg_sdl::prelude::{Align, TextDrawer};
 use sdl2::pixels::Color;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
 use std::collections::HashMap;
 
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum BlocElement {
+	Body,
+	DeleteButton,
+	CopyButton,
+	InfoButton,
+	Slot(usize),
+	Sequence(usize),
+	CustomButton(usize),
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum BlocContainer {
+	Slot { slot_id: usize },
+	Sequence { sequence_id: usize, place: usize },
+}
+
 pub trait Bloc {
 	// fn new(position: Point2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Self;
-	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
-	fn slot_position(&self, slot_id: u16) -> Vector2<f64>;
-	fn sequence_position(&self, sequence_id: u16) -> Vector2<f64>;
-	fn button_size(&self, button_id: u16) -> Vector2<f64>;
-	fn button_position(&self, button_id: u16) -> Vector2<f64>;
+	fn get_skeleton(&self) -> &Skeleton;
+	fn get_skeleton_mut(&mut self) -> &mut Skeleton;
+	// fn reset_size_and_position(&mut self, blocs: &HashMap<u32, Box<dyn Bloc>>);
+
+	// fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64>;
+	// fn slot_position(&self, slot_id: usize) -> Vector2<f64>;
+	// fn sequence_position(&self, sequence_id: usize) -> Vector2<f64>;
+	fn button_size(&self, button_id: usize) -> Vector2<f64>;
+	fn button_position(&self, button_id: usize) -> Vector2<f64>;
 	fn draw_button(&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera);
-	fn button_function(&mut self, button_id: u16) -> bool;
+	fn button_function(&mut self, button_id: usize) -> bool;
 }
 
 /// A bloc represents a piece of code that can be executed.
 ///
 /// It has a "skeleton" that contains everything that all blocs have in common:
 /// - color
-/// - position (if the bloc has a parent, it's relative to the parent)
+/// - position (it's always absolute)
 /// - vector of slots
 /// - vector of sequences
 ///
 /// And a bloc type, witch is an enum that contains data specific to the bloc.
 pub struct Skeleton {
+	id: u32,
 	color: Color,
-	pub position: Point2<f64>,
-	pub size: Vector2<f64>,
-	hovered_on: HoveredOn,
+	position: Point2<f64>,
+	size: Vector2<f64>,
 	slots: Vec<Slot>,
+	slots_positions: Box<dyn Fn(usize) -> Vector2<f64>>,
 	sequences: Vec<Sequence>,
+	sequences_positions: Box<dyn Fn(usize) -> Vector2<f64>>,
+	get_size: Box<dyn Fn(&Skeleton) -> Vector2<f64>>,
+	parent: Option<Container>,
 }
 impl Skeleton {
-	const RADIUS: f64 = 8.0;
+	pub const RADIUS: f64 = 8.0;
 	const MARGIN: f64 = 12.0;
 	const INNER_MARGIN: f64 = 6.0;
 	const SHADOW: Vector2<f64> = Vector2::new(6.0, 8.0);
+	const HOVER_ALPHA: u8 = 20;
 
-	pub fn new(color: Color, position: Point2<f64>, slots: Vec<Slot>, sequences: Vec<Sequence>) -> Self {
-		Self { color, position, size: Vector2::zeros(), hovered_on: HoveredOn::None, slots, sequences }
+	pub fn new(
+		id: u32, color: Color, position: Point2<f64>, slots: Vec<Slot>,
+		slots_positions: Box<dyn Fn(usize) -> Vector2<f64>>, sequences: Vec<Sequence>,
+		sequences_positions: Box<dyn Fn(usize) -> Vector2<f64>>, get_size: Box<dyn Fn(&Skeleton) -> Vector2<f64>>,
+	) -> Self {
+		let mut skeleton = Self {
+			id,
+			color,
+			position,
+			size: Vector2::zeros(),
+			slots,
+			slots_positions,
+			sequences,
+			sequences_positions,
+			get_size,
+			parent: None,
+		};
+		(0..skeleton.slots.len())
+			.for_each(|slot_id| skeleton.slots[slot_id].set_position((*skeleton.slots_positions)(slot_id)));
+		skeleton.size = (*skeleton.get_size)(&skeleton);
+		skeleton
 	}
 
+	/*
 	pub fn repr(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> String {
 		format!("Bloc( {} )", self.slots.get(0).unwrap().repr(blocs))
 	}
+	 */
 
-	/// Met à jour la taille du bloc et celles de ses enfants.
-	fn update_size(&mut self, blocs: &mut HashMap<u32, Box<dyn Bloc>>) {
-		/*
-		self.slots.iter().for_each(|slot| slot.update_size(blocs));
-		self.sequences.iter().for_each(|sequence| sequence.update_size(blocs));
-		self.size = self.get_size();
-		 */
-	}
-	/// Retourne la taille du bloc.
-	fn get_size(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vector2<f64> {
-		// panic!("'get_size' is not implemented in '{}' class", self.type_name())
-		self.slots.get(0).unwrap().get_size(blocs) + Vector2::new(2.0, 2.0) * Self::MARGIN
+	pub fn set_parent(&mut self, parent: Option<Container>) {
+		self.parent = parent
 	}
 
-	pub fn collide(&self, point: Vector2<f64>) -> bool {
+	pub fn get_parent(&self) -> &Option<Container> {
+		&self.parent
+	}
+
+	pub fn set_position(&mut self, position: Point2<f64>) {
+		self.position = position
+	}
+
+	pub fn get_position(&self) -> &Point2<f64> {
+		&self.position
+	}
+
+	pub fn get_size(&self) -> &Vector2<f64> {
+		&self.size
+	}
+
+	/// Returns a vec of the bloc's childs ids from leaf to root (including itself)
+	pub fn get_recursive_childs(&self, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Vec<u32> {
+		let mut childs = Vec::new();
+		self.slots.iter().for_each(|slot| {
+			childs.extend(slot.get_recursive_childs(blocs));
+		});
+		childs.push(self.id);
+		childs
+	}
+
+	/// Met à jour la taille du bloc et la position de ses slots et séquences
+	pub fn update_layout(&mut self, blocs: &HashMap<u32, Box<dyn Bloc>>) {
+		self.slots.iter_mut().for_each(|slot| slot.update_size(blocs));
+		(0..self.slots.len()).for_each(|slot_id| self.slots[slot_id].set_position((*self.slots_positions)(slot_id)));
+		// TODO same for sequences
+		self.size = (*self.get_size)(&self);
+	}
+
+	/// Met à jour la position de ses enfants
+	pub fn update_child_position(&self, blocs: &mut HashMap<u32, Box<dyn Bloc>>) {
+		self.slots.iter().for_each(|slot| slot.update_child_position(self.position, blocs));
+		// TODO same for sequences
+	}
+
+	pub fn collide_element(&self, point: Point2<f64>) -> Option<BlocElement> {
+		if !self.collide_point(point) {
+			return None;
+		}
+
+		for (slot_id, slot) in self.slots.iter().enumerate() {
+			if slot.collide_point(point - self.position.coords) {
+				return Some(BlocElement::Slot(slot_id));
+			}
+		}
+
+		for (sequence_id, sequence) in self.sequences.iter().enumerate() {
+			if sequence.collide_point(point - self.position.coords) {
+				return Some(BlocElement::Sequence(sequence_id));
+			}
+		}
+
+		Some(BlocElement::Body)
+	}
+
+	pub fn collide_container(&self, position: Point2<f64>, size: Vector2<f64>) -> Option<(BlocContainer, f64)> {
+		if !self.collide_rect(position, size) {
+			return None;
+		}
+
+		let (mut bloc_container, mut ratio) = (None, 0.0);
+
+		self.slots.iter().enumerate().for_each(|(slot_id, slot)| {
+			if slot.collide_rect(position - self.position.coords, size) && !slot.has_child() {
+				let new_ratio = slot.get_ratio(position - self.position.coords, size);
+				if new_ratio > ratio {
+					bloc_container = Some(BlocContainer::Slot { slot_id });
+					ratio = new_ratio;
+				}
+			}
+		});
+
+		// TODO idem for sequences
+
+		if let Some(bloc_container) = bloc_container {
+			return Some((bloc_container, ratio));
+		}
+		None
+	}
+
+	pub fn set_slot_child(&mut self, slot_id: usize, child_id: u32) {
+		self.slots[slot_id].set_child(child_id);
+	}
+
+	pub fn set_slot_empty(&mut self, slot_id: usize) {
+		self.slots[slot_id].set_empty();
+	}
+
+	pub fn collide_point(&self, point: Point2<f64>) -> bool {
 		self.position.x < point.x
 			&& point.x < self.position.x + self.size.x
 			&& self.position.y < point.y
 			&& point.y < self.position.y + self.size.y
 	}
 
-	pub fn collide_bloc(&self, bloc: &Skeleton) -> bool {
-		self.position.x < bloc.position.x + bloc.size.x
-			&& bloc.position.x < self.position.x + self.size.x
-			&& self.position.y < bloc.position.y + bloc.size.y
-			&& bloc.position.y < self.position.y + self.size.y
+	pub fn collide_rect(&self, position: Point2<f64>, size: Vector2<f64>) -> bool {
+		self.position.x < position.x + size.x
+			&& position.x < self.position.x + self.size.x
+			&& self.position.y < position.y + size.y
+			&& position.y < self.position.y + self.size.y
 	}
 
 	/// Retourne la référence du bloc en collision avec un point (hiérarchie)
 	///
 	/// et sur quelle partie du bloc est ce point (hovered on).
-	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Option<(Vec<u16>, HoveredOn)> {
+	/*
+	fn collide_point(&self, point: Vector2<f64>, blocs: &HashMap<u32, Box<dyn Bloc>>) -> Option<(Vec<usize>, HoveredOn)> {
 		if !self.collide(point) {
 			return None;
 		}
@@ -100,7 +230,7 @@ impl Skeleton {
 		}
 		*/
 		for (i, slot) in self.slots.iter().rev().enumerate() {
-			let slot_id = (self.slots.len() - 1 - i) as u16;
+			let slot_id = (self.slots.len() - 1 - i) as usize;
 			let slot_collide = slot.collide_point(point - self.slot_position(slot_id), slot_id, blocs);
 			if slot_collide.is_some() {
 				return slot_collide;
@@ -108,7 +238,7 @@ impl Skeleton {
 		}
 
 		for (i, sequence) in self.sequences.iter().rev().enumerate() {
-			let sequence_id = (self.sequences.len() - 1 - i) as u16;
+			let sequence_id = (self.sequences.len() - 1 - i) as usize;
 			let sequence_collide =
 				sequence.collide_point(point - self.sequence_position(sequence_id), sequence_id, blocs);
 			if sequence_collide.is_some() {
@@ -130,13 +260,15 @@ impl Skeleton {
 		*/
 		return Some((Vec::new(), HoveredOn::Body));
 	}
+	 */
 
 	/// Retourne la référence du slot ou de la séquence en collision avec un rectangle (hiérarchie)
 	///
 	/// et la proportion de collision en hauteur (float).
+	/*
 	fn hovered_slot(
 		&self, position: Point2<f64>, size: Vector2<f64>, ratio: f32, blocs: &HashMap<u32, Box<dyn Bloc>>,
-	) -> Option<(Vec<u16>, f32)> {
+	) -> Option<(Vec<usize>, f32)> {
 		if !(Self::MARGIN - size.x < position.x
 			&& position.x < self.size.x - 2.0 * Self::MARGIN
 			&& Self::MARGIN - size.y < position.y
@@ -147,9 +279,9 @@ impl Skeleton {
 		let mut hierarchy_ratio = None;
 
 		self.slots.iter().enumerate().for_each(|(slot_id, slot)| {
-			let slot_position = self.slot_position(slot_id as u16);
+			let slot_position = self.slot_position(slot_id as usize);
 
-			if let Some(slot_hovered) = slot.hovered_slot(position - slot_position, size, ratio, slot_id as u16, blocs)
+			if let Some(slot_hovered) = slot.hovered_slot(position - slot_position, size, ratio, slot_id as usize, blocs)
 			{
 				let (hierarchy, ratio) = slot_hovered;
 				hierarchy_ratio = Some((hierarchy, ratio));
@@ -157,10 +289,10 @@ impl Skeleton {
 		});
 
 		self.sequences.iter().enumerate().for_each(|(sequence_id, sequence)| {
-			let sequence_position = self.sequence_position(sequence_id as u16);
+			let sequence_position = self.sequence_position(sequence_id as usize);
 
 			if let Some(sequence_hovered) =
-				sequence.hovered_slot(position - sequence_position, size, ratio, sequence_id as u16, blocs)
+				sequence.hovered_slot(position - sequence_position, size, ratio, sequence_id as usize, blocs)
 			{
 				let (hierarchy, ratio) = sequence_hovered;
 				hierarchy_ratio = Some((hierarchy, ratio));
@@ -169,13 +301,14 @@ impl Skeleton {
 
 		hierarchy_ratio
 	}
+	 */
 
 	pub fn draw(
-		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera,
-		blocs: &HashMap<u32, Box<dyn Bloc>>, selected: bool,
+		&self, canvas: &mut Canvas<Window>, text_drawer: &TextDrawer, camera: &Camera, moving: bool,
+		selected: Option<&BlocElement>, hovered: Option<&BlocElement>,
 	) {
 		// SHADOW
-		let origin = if selected {
+		let origin = if moving {
 			let shadow_color = Color::from((0, 0, 0, 50));
 			canvas.set_blend_mode(BlendMode::Mod);
 			camera.fill_rounded_rect(canvas, shadow_color, self.position, self.size, Self::RADIUS);
@@ -184,37 +317,55 @@ impl Skeleton {
 		} else {
 			self.position
 		};
-
+		// BODY
 		camera.fill_rounded_rect(canvas, self.color, origin, self.size, Self::RADIUS);
-		if self.hovered_on != HoveredOn::None {
-			camera.draw_rounded_rect(canvas, Colors::BLACK, origin, self.size, Self::RADIUS);
+		if selected.is_some() || hovered.is_some() {
 			// draw top box
 		}
-
-		self.slots.iter().enumerate().for_each(|(slot_id, slot)| {
-			let hovered = if let HoveredOn::Slot(hovered_slot_id) = self.hovered_on {
-				slot_id as u16 == hovered_slot_id
-			} else {
-				false
-			};
-			slot.draw(canvas, text_drawer, camera, origin.coords + self.slot_position(slot_id as u16), hovered, blocs);
+		// SLOTS
+		self.slots.iter().for_each(|slot| {
+			slot.draw(canvas, text_drawer, camera, origin);
 		});
-
-		self.sequences.iter().enumerate().for_each(|(sequence_id, sequence)| {
-			let hovered = if let HoveredOn::Sequence(hovered_sequence_id) = self.hovered_on {
-				sequence_id as u16 == hovered_sequence_id
-			} else {
-				false
-			};
-			sequence.draw(
-				canvas,
-				text_drawer,
-				camera,
-				origin.coords + self.sequence_position(sequence_id as u16),
-				hovered,
-				blocs,
-			);
+		// SEQUENCES
+		self.sequences.iter().for_each(|sequence| {
+			sequence.draw(canvas, text_drawer, camera, origin);
 		});
+		// HOVERED
+		if let Some(element) = hovered {
+			match element {
+				BlocElement::Body => {
+					canvas.set_blend_mode(BlendMode::Mod);
+					camera.fill_rounded_rect(
+						canvas,
+						Color::from((0, 0, 0, Self::HOVER_ALPHA)),
+						origin,
+						self.size,
+						Self::RADIUS,
+					);
+					canvas.set_blend_mode(BlendMode::None);
+				}
+				BlocElement::Slot(slot_id) => {
+					let slot = self.slots.get(slot_id.clone()).unwrap();
+					slot.draw_hovered(canvas, camera, origin);
+				}
+				_ => (),
+			}
+		}
+		// SELECTED
+		if let Some(element) = selected {
+			match element {
+				BlocElement::Body => {
+					camera.draw_rounded_rect(canvas, Colors::BLACK, origin, self.size, Self::RADIUS);
+				}
+				BlocElement::Slot(slot_id) => {
+					let slot = self.slots.get(slot_id.clone()).unwrap();
+					slot.draw_selected(canvas, camera, origin);
+				}
+				_ => (),
+			}
+		}
+		let text = format!("{}  parent: {:?}", self.id, self.parent);
+		camera.draw_text(canvas, text_drawer, origin, 15.0, text, Align::TopLeft);
 	}
 }
 
